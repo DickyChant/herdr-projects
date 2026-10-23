@@ -1,0 +1,32 @@
+/* The web board's columns (columns.js): its groups side by side, a kanban, each task a card. Drawn with the board's
+   own colours (board.css), so it follows the web UI's light, dark and every palette as the list does. */
+.sw-board.is-columns .sw-list-host { padding: var(--space-2, 8px) var(--space-3, 12px) var(--space-3, 12px); overflow: hidden; display: flex; flex-direction: column; }
+.sw-board.is-columns .sw-list { max-width: none; margin: 0; }
+.sw-cols-list { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--space-2, 8px); }
+/* Wide with a task open beside it, the columns keep most of the screen and scroll sideways. */
+@media (min-width: 900px) { .sw-board.is-columns.has-task .sw-list-host { flex: 1 1 62%; max-width: none; } }
+/* The headings over the columns (all machines, a machine, a project): one row of them, as the list has them. */
+.sw-col-over { flex: none; display: flex; flex-wrap: wrap; gap: var(--space-1, 4px) var(--space-3, 12px); }
+.sw-col-over .sw-hrow { padding-left: var(--space-3, 12px); }
+.sw-cols { flex: 1; min-height: 0; display: flex; gap: var(--space-3, 12px); overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: var(--space-2, 8px); }
+.sw-col { flex: 0 0 clamp(260px, 22vw, 340px); min-height: 0; display: flex; flex-direction: column; border: var(--hairline, 1px) solid var(--sw-line); border-radius: var(--radius-lg, 12px); background: var(--sw-panel); }
+.sw-col-head { flex: none; display: flex; align-items: center; gap: var(--space-2, 8px); min-height: var(--touch-target, 40px); padding: 0 var(--space-3, 12px); border-bottom: var(--hairline, 1px) solid var(--sw-line); }
+.sw-col-head.is-fold { cursor: pointer; }
+.sw-col-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm, 13px); font-weight: var(--fw-semibold, 600); }
+.sw-col-n { flex: none; min-width: 1.75em; padding: 0 var(--space-2, 8px); border-radius: var(--radius-pill, 999px); background: var(--sw-lift); color: var(--sw-dim); font-size: var(--fs-xs, 13px); text-align: center; }
+.sw-col-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: var(--space-2, 8px); display: flex; flex-direction: column; gap: var(--space-2, 8px); }
+.sw-col-seg { display: flex; flex-direction: column; gap: var(--space-2, 8px); }
+.sw-col-part { display: flex; align-items: center; gap: var(--space-2, 8px); min-height: 32px; padding: 0 var(--space-1, 4px); border: 0; background: none; color: var(--sw-dim); font: inherit; font-size: var(--fs-xs, 13px); text-align: left; cursor: pointer; }
+.sw-col-caret { flex: none; width: 1em; }
+.sw-col-where { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* A card is the list's row, lifted: its mark, tag, title, what it says, its bar and tags, in a box of its own. */
+.sw-cards { display: flex; flex-direction: column; gap: var(--space-2, 8px); }
+.sw-cards .sw-row { padding: var(--space-2, 8px) var(--space-3, 12px); border: var(--hairline, 1px) solid var(--sw-line); background: var(--sw-bg); }
+.sw-cards .sw-row.is-selected { background: var(--sw-lift); border-color: var(--accent, #f0a830); }
+.sw-cards .sw-row.is-quiet { opacity: 0.8; }
+.sw-col .sw-more { align-self: flex-start; }
+.sw-col-seg.is-folded .sw-col-part { color: var(--sw-dim); }
+/* The header's switch between the list and the columns: lit while the columns show. Narrow, there is only the list. */
+.sw-cols-toggle[aria-pressed="true"] { color: var(--accent, #f0a830); }
+@media (max-width: 899px) { .sw-cols-toggle { display: none; } }
+@media (hover: hover) and (pointer: fine) { .sw-cols { scrollbar-width: thin; scrollbar-color: var(--border-strong, #3e3830) transparent; } }

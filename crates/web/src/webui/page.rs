@@ -13,6 +13,8 @@ const FILES: &[(&str, &str)] = &[
     ("callbtn.js", include_str!("page/callbtn.js")),
     ("chat.css", include_str!("page/chat.css")),
     ("chat.js", include_str!("page/chat.js")),
+    ("columns.css", include_str!("page/columns.css")),
+    ("columns.js", include_str!("page/columns.js")),
     ("compose.css", include_str!("page/compose.css")),
     ("compose.js", include_str!("page/compose.js")),
     ("dock.css", include_str!("page/dock.css")),

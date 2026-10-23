@@ -32,7 +32,7 @@ export function rowEl(r, { selected, opened, onPick, onOpen }) {
 const openEl = (r, onOpen) => h("span.sw-row-acts", h("button.btn.sw-open", { type: "button", "aria-label": `Open ${r.tag || r.title}`, onclick: (e) => { e.stopPropagation(); onOpen(r.id); } }, r.automation ? "Open automation" : "Open task", icon("right")));
 
 // Words on their way to another machine: a row of their own until that machine has taken them.
-const jobEl = (j, { selected, onPick }) => h("li.sw-row", { className: `sw-row${selected ? " is-selected" : ""}`, data: { id: j.id }, role: "option", "aria-selected": selected ? "true" : "false", tabIndex: 0, onclick: () => onPick(j.id), onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(j.id); } } },
+export const jobEl = (j, { selected, onPick }) => h("li.sw-row", { className: `sw-row${selected ? " is-selected" : ""}`, data: { id: j.id }, role: "option", "aria-selected": selected ? "true" : "false", tabIndex: 0, onclick: () => onPick(j.id), onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(j.id); } } },
   markEl(j.failed ? "✗" : "●", j.failed ? "red" : "yellow"),
   h("span.sw-main", h("span.sw-line", h("span.sw-title", j.text)), j.failed && j.msg ? h("span.sw-says", j.msg) : null));
 
@@ -58,7 +58,7 @@ export function listEl(list, opts) {
 // words come in their inks: the name in the base colour (a machine's and the top row's bold), a status group's in its
 // colour, what goes with it dimmed. A tap folds it to its one line, and unfolds it; the selected coordinator's row has
 // an Open button that shows the coordinator whole.
-function headEl(g, selected, { onFold, onOpen, onPick, actions = [], onPress }) {
+export function headEl(g, selected, { onFold, onOpen, onPick, actions = [], onPress }) {
   const p = g.pilot;
   const kind = g.top ? "top" : g.machine ? "machine" : g.repo ? "project" : g.automations ? "autos" : "group";
   // (Drawn as a task's mark is: the round ones at one size, dom.js.)
@@ -85,7 +85,7 @@ function headEl(g, selected, { onFold, onOpen, onPick, actions = [], onPress }) 
 const GONE = "sw-unread-off";
 const said1 = (u) => `${u.machine}\n${u.line}`;
 const gone = () => { try { return JSON.parse(localStorage.getItem(GONE) || "[]"); } catch { return []; } };
-function unreadEl(list) {
+export function unreadEl(list) {
   const all = list.unread || [], bad = all.filter((u) => !u.asking), asking = all.filter((u) => u.asking);
   const off = gone(), show = bad.length && !bad.every((u) => off.includes(said1(u)));
   const names = bad.map((u) => u.machine), who = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;

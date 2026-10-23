@@ -5,6 +5,7 @@
 /* global document, window, location, history, CustomEvent, PopStateEvent */
 import { h, icon, get, post } from "./dom.js";
 import { listEl } from "./list.js";
+import { columnsEl, columnsOn, setColumns, columnsFit } from "./columns.js";
 import { panelEl, settingsEl } from "./panel.js";
 import { chatEl } from "./chat.js";
 import { askEl, menuEl, pickerEl, toast, trapEscape } from "./sheets.js";
@@ -85,7 +86,11 @@ function draw() {
     if (lit && key !== litShown) { const l = lit.offsetLeft, r = l + lit.offsetWidth; if (l < row.scrollLeft || r > row.scrollLeft + row.clientWidth) row.scrollLeft = Math.max(0, l - 24); }
     litShown = key;
   });
-  once("list", [snap.list, !!snap.panel, snap.actions], () => drawList(listEl(snap.list, { opened: snap.panel ? snap.list.selected : "", onPick: (id) => call("pick", { id, open: !!snap.panel && wide() }), onOpen: (id) => call("pick", { id, open: true }), onMore: () => press("allDone"), onFold: (id) => call("fold", { id }), actions: snap.actions, onPress: press })));
+  // Columns (a kanban, columns.js) where this browser asked for them and the screen is wide enough; else the list.
+  const cols = columnsOn() && columnsFit();
+  root.classList.toggle("is-columns", cols);
+  const toggle = part("cols-toggle"); toggle.setAttribute("aria-pressed", cols ? "true" : "false"); const says = cols ? "Show as a list" : "Show as columns"; toggle.title = says; toggle.setAttribute("aria-label", says);
+  once("list", [snap.list, !!snap.panel, snap.actions, cols], () => drawList((cols ? columnsEl : listEl)(snap.list, { opened: snap.panel ? snap.list.selected : "", onPick: (id) => call("pick", { id, open: !!snap.panel && wide() }), onOpen: (id) => call("pick", { id, open: true }), onMore: () => press("allDone"), onFold: (id) => call("fold", { id }), actions: snap.actions, onPress: press })));
   once("panel", [snap.panel, snap.actions, snap.canOpen, snap.role], () => { const el = panelEl(snap, { onPress: press, onMenu: () => { menuOpen = true; draw(); }, onClose: () => call("pick", { id: snap.list.selected, open: false }), onGo: (id) => call("pick", { id, open: true }) }); const host = part("task-host"), top = host.scrollTop; part("panel-host").replaceChildren(...(el ? [el] : [])); host.scrollTop = top; });
   // All settings stands under the task in a place of its own, drawn again only when a setting changed: what you
   // are typing into one of its boxes is not taken away by the task's status moving on.
@@ -154,6 +159,7 @@ export function openBoard({ onClose }) {
       h("button.icon-button.sw-back", { type: "button", "aria-label": "Close the board", title: "Close the board", onclick: () => (chat.full() ? chat.full(false) : closing?.()) }, icon("back")),
       h("h2.sw-name", "Board"), h("span.sw-where"),
       h("span.sw-head-space"),
+      h("button.icon-button.sw-cols-toggle", { type: "button", "aria-label": "Show as columns", title: "Show as columns", "aria-pressed": "false", onclick: () => { setColumns(!columnsOn()); draw(); } }, icon("board")),
       h("button.icon-button", { type: "button", "aria-label": "Find tasks", title: "Find tasks", onclick: () => { finding = !finding; draw(); if (finding) find.focus(); else if (snap?.flags.filter) { find.value = ""; call("find", { text: "" }); } } }, icon("find")),
       h("button.icon-button", { type: "button", "aria-label": "More", title: "More", "aria-haspopup": "dialog", onclick: () => { menuOpen = true; draw(); } }, icon("more"))),
     // One row; the wheel scrolls it sideways where it does not fit (a mouse has no sideways swipe).
