@@ -36,7 +36,8 @@ fn line(n: &[usize; 5]) -> String {
     let parts: Vec<String> = SAID.iter().filter(|(g, _)| n[at(g)] > 0).map(|(g, w)| format!("{} {w}", n[at(g)])).collect();
     if parts.is_empty() { "all quiet".into() } else { parts.join(" · ") }
 }
-fn entry(scope: &str, name: &str, n: &[usize; 5], title: String) -> Value { json!({ "scope": scope, "name": name, "dot": dot(n), "line": line(n), "title": title }) }
+/// `n`: how many tasks stand in each group, in the board's order (`groups` beside the entries names them): the home page's counts.
+fn entry(scope: &str, name: &str, n: &[usize; 5], title: String) -> Value { json!({ "scope": scope, "name": name, "dot": dot(n), "line": line(n), "title": title, "n": n }) }
 fn add(a: &mut [usize; 5], b: &[usize; 5]) { for (x, y) in a.iter_mut().zip(b) { *x += y; } }
 /// Another machine's entry: its board as it last answered, or why it could not, or that it is being asked.
 fn far(c: &Client, label: &str, m: &Remote, pcs: &[Pc]) -> (Value, Option<[usize; 5]>) {
@@ -67,11 +68,11 @@ pub fn boards(c: &mut Client) -> Value {
         out.push(e);
     }
     // All machines at the top, once there is another machine: with only this one it would show the same tasks again.
-    if c.s.remotes.is_empty() { return json!({ "boards": out, "scope": c.s.scope }); }
+    if c.s.remotes.is_empty() { return json!({ "boards": out, "scope": c.s.scope, "groups": GROUPS }); }
     let mut e = entry("*", "All machines", &all, format!("Every machine's board: {}", line(&all)));
     if away > 0 { e["line"] = json!(format!("{} · {away} not reachable", line(&all))); }
     out.insert(0, e);
-    json!({ "boards": out, "scope": c.s.scope })
+    json!({ "boards": out, "scope": c.s.scope, "groups": GROUPS })
 }
 /// The board of one machine (`""` this one, `"*"` all of them, else the machine's name on the board), as the scope key
 /// would have shown it. One the board does not know (any more) is said, and nothing changes.

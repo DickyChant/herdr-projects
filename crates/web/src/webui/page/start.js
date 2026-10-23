@@ -7,14 +7,17 @@
 import { h, icon, get } from "./dom.js";
 import { openBoard, closeBoard, isOpen, freshen } from "./board.js";
 import { boardsEl } from "./boards.js";
+import { openHome, closeHome, isHomeOpen, homeEntryEl } from "./home.js";
 
 const HASH = "#board";
+// The home page (home.js): every machine at a glance, its entry over the Boards section.
+const HOME = "#home";
 const FOOT = ".sidebar-footer";
 let allowed = false, floating = null;
 
 function styles() {
   if (document.querySelector("link[data-sw]")) return;
-  for (const name of ["board", "columns", "chat", "dock", "compose", "files", "voice", "call", "boards"]) document.head.append(h("link", { rel: "stylesheet", href: `/herdr-projects/page/${name}.css`, "data-sw": true }));
+  for (const name of ["board", "columns", "home", "chat", "dock", "compose", "files", "voice", "call", "boards"]) document.head.append(h("link", { rel: "stylesheet", href: `/herdr-projects/page/${name}.css`, "data-sw": true }));
 }
 const entry = (cls) => { const b = h(`button.${cls}`, { type: "button", "data-sw-entry": true, title: "Work board", onclick: () => show(true) }); b.append(icon("board"), "Board"); return b; };
 // A board picked in the sidebar: shown, and on a phone the web UI's drawer closes as it does when you pick a pane there.
@@ -28,8 +31,9 @@ function place() {
   if (!allowed) return;
   const foot = document.querySelector(FOOT);
   if (foot) {
-    const boards = boardsEl(picked);
+    const boards = boardsEl(picked), home = homeEntryEl(() => goHome(true));
     if (boards.nextElementSibling !== foot) foot.before(boards);
+    if (home.nextElementSibling !== boards) boards.before(home);
     floating?.remove(); floating = null;
     return;
   }
@@ -44,7 +48,15 @@ function show(on) {
   if (!on && location.hash === HASH) history.replaceState(history.state, "", location.pathname + location.search);
   if (on) openBoard({ onClose: () => show(false) }); else closeBoard();
 }
-function follow() { if (location.hash === HASH) { if (!isOpen()) openBoard({ onClose: () => show(false) }); } else if (isOpen()) closeBoard(); }
+function goHome(on) {
+  if (on && location.hash !== HOME) history.pushState(history.state, "", location.pathname + location.search + HOME);
+  if (!on && location.hash === HOME) history.replaceState(history.state, "", location.pathname + location.search);
+  follow();
+}
+function follow() {
+  if (location.hash === HASH) { if (!isOpen()) openBoard({ onClose: () => show(false) }); } else if (isOpen()) closeBoard();
+  if (location.hash === HOME) { if (!isHomeOpen()) openHome({ onClose: () => goHome(false) }); } else if (isHomeOpen()) closeHome();
+}
 
 async function begin() {
   const first = await get("hello");

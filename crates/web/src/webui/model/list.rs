@@ -25,6 +25,7 @@ pub fn row_of(s: &State, t: &Theme, r: &Obj, now: i64) -> Value {
         "percent": f.percent.text().trim(), "eta": f.eta.text(), "review": pieces(&f.review), "pr": pieces(&f.pr), "prUrl": crate::review_page::render::web_url(r.s("pr")),
         "time": format!("{}{}", f.elapsed, if f.ago { " ago" } else { "" }), "quiet": (r.s("state") == "done"),
         "pinned": r.b("pinned"), "archived": r.b("archivedAt"), "app": r.s("app"), "made": r.at("automation").b("id"), // `made`: by an automation (its [auto] tag is dimmed, as every tag is)
+        "after": crate::after::after_of(r), // the tasks it waits for (`--after`): the home page's topology draws them as links
     })
 }
 /// One automation's row, in a task row's places: the word on or off where a task has its number, its trigger (and why

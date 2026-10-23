@@ -63,7 +63,7 @@ fn a_board_with_nothing_going_on_is_all_quiet_its_archive_left_out_and_with_no_o
     told(vec![]);
     let b = boards(Some(vec![pc("local", "local", "", true)]));
     assert_eq!(b.at("boards"), &json!([
-        { "scope": "", "name": "This machine", "dot": "quiet", "line": "all quiet", "title": "This machine's board: all quiet" },
+        { "scope": "", "name": "This machine", "dot": "quiet", "line": "all quiet", "title": "This machine's board: all quiet", "n": [0, 0, 0, 0, 0] },
     ]));
     // the terminal board showed every machine: with no other one, the web shows this machine's own, and cannot pick it
     assert_eq!(b.s("scope"), "", "{b}");

@@ -7,6 +7,8 @@ use common::board::{open, web, web_as};
 mod design;
 // The board as columns, a kanban beside the list: its own file, a module of this one.
 mod columns;
+// The home page and its topology: its own file, a module of this one.
+mod home;
 // Open this task's agent on a space that was closed, and the web UI that does not show it yet.
 mod open;
 use common::*;

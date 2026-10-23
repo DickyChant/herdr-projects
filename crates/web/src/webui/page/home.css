@@ -1,0 +1,60 @@
+/* The home page (home.js): mission control over every machine, in cards on a grid, with the board's own colours and
+   the web UI's type and spacing (board.css). One column on a phone, two or three on a wide screen. */
+.sw-home-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: var(--space-4, 16px); }
+.sw-home-grid { display: grid; gap: var(--space-4, 16px); grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); max-width: 1400px; margin: 0 auto; align-items: start; }
+.sw-hwide { grid-column: 1 / -1; }
+.sw-hcard { border: var(--hairline, 1px) solid var(--sw-line); border-radius: var(--radius-lg, 12px); background: var(--sw-panel); overflow: hidden; }
+.sw-hcard-head { display: flex; align-items: center; gap: var(--space-2, 8px); min-height: 44px; padding: 0 var(--space-3, 12px) 0 var(--space-4, 16px); border-bottom: var(--hairline, 1px) solid var(--sw-line); }
+.sw-hcard-head h3 { flex: 1; margin: 0; font-size: var(--fs-md, 14px); font-weight: var(--fw-semibold, 600); color: var(--sw-strong); }
+.sw-hcount { min-width: 1.75em; padding: 0 var(--space-2, 8px); border-radius: var(--radius-pill, 999px); background: var(--sw-lift); color: var(--sw-dim); font-size: var(--fs-xs, 13px); text-align: center; }
+.sw-hcount.is-hot { background: color-mix(in srgb, var(--sw-red) 22%, transparent); color: var(--sw-red); font-weight: var(--fw-semibold, 600); }
+.sw-hlink { display: inline-flex; align-items: center; gap: var(--space-1, 4px); }
+.sw-hlist { list-style: none; margin: 0; padding: var(--space-1, 4px); }
+.sw-hitem { display: flex; align-items: flex-start; gap: var(--space-3, 12px); min-height: var(--touch-target, 40px); padding: var(--space-2, 8px) var(--space-3, 12px); border-radius: var(--radius-md, 8px); cursor: pointer; }
+@media (hover: hover) { .sw-hitem:hover { background: var(--sw-hover); } }
+.sw-hitem:focus-visible { outline: var(--ring, 2px solid var(--sw-yellow)); outline-offset: calc(-1 * var(--ring-offset, 2px)); }
+.sw-hmain { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sw-hline1 { display: flex; align-items: baseline; gap: var(--space-2, 8px); min-width: 0; }
+.sw-hid { flex: none; color: var(--sw-dim); font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-sm, 13px); }
+.sw-htitle { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sw-hsub, .sw-htime { flex: none; color: var(--sw-dim); font-size: var(--fs-xs, 13px); }
+.sw-hsays { color: var(--sw-dim); font-size: var(--fs-sm, 13px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sw-hside { flex: none; display: flex; align-items: center; gap: var(--space-2, 8px); }
+.sw-hchip { padding: 0 var(--space-2, 8px); border: var(--hairline, 1px) solid var(--sw-line); border-radius: var(--radius-pill, 999px); color: var(--sw-dim); font-size: var(--fs-xs, 13px); white-space: nowrap; }
+.sw-hstate { font-size: var(--fs-xs, 13px); }
+.sw-hdot { flex: none; width: 10px; height: 10px; margin-top: 0.45em; border-radius: 50%; background: var(--sw-red); }
+.sw-hdot.is-on { background: var(--sw-green); }
+.sw-hempty { margin: 0; padding: var(--space-4, 16px); color: var(--sw-dim); }
+/* The board's count in each group: five tiles, each opening the board. */
+.sw-htiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-2, 8px); padding: var(--space-3, 12px); }
+@media (max-width: 480px) { .sw-htiles { grid-template-columns: repeat(3, 1fr); } }
+.sw-htile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--space-3, 12px) var(--space-1, 4px); border: var(--hairline, 1px) solid var(--sw-line); border-radius: var(--radius-md, 8px); background: var(--sw-bg); color: var(--sw-text); font: inherit; cursor: pointer; }
+@media (hover: hover) { .sw-htile:hover { background: var(--sw-hover); } }
+.sw-htile-n { font-size: 24px; font-weight: var(--fw-bold, 700); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.sw-htile-name { color: var(--sw-dim); font-size: var(--fs-xs, 13px); text-align: center; }
+/* The topology (topology.js): the board's colours as fills and strokes, a pulse on what works. */
+.sw-topo-box { padding: var(--space-2, 8px) var(--space-3, 12px) var(--space-3, 12px); }
+.sw-topo { display: block; width: 100%; height: auto; max-height: 62vh; }
+.sw-tlink { stroke: var(--sw-line); stroke-width: 1.5; }
+.sw-tafter { fill: none; stroke: var(--sw-yellow); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.sw-tarrow { fill: var(--sw-yellow); }
+.sw-tn { cursor: pointer; outline: none; }
+.sw-tn.is-boss { cursor: default; }
+.sw-tnode { stroke: var(--sw-bg); stroke-width: 2; }
+.sw-tnode.is-boss { stroke: var(--sw-strong); stroke-width: 2.5; }
+.sw-tn:is(:hover, :focus-visible) .sw-tnode { stroke: var(--sw-strong); }
+.sw-tlabel { fill: var(--sw-text); font-size: 12px; text-anchor: middle; }
+.sw-tlabel.is-strong { font-weight: var(--fw-semibold, 600); font-size: 13px; }
+.sw-tsub { fill: var(--sw-dim); font-size: 11px; text-anchor: middle; }
+.sw-tpulse { fill: none; stroke-width: 2; opacity: 0.6; }
+@media (prefers-reduced-motion: no-preference) { .sw-tpulse { animation: sw-tpulse 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; } }
+@keyframes sw-tpulse { from { opacity: 0.7; transform: scale(0.85); } to { opacity: 0; transform: scale(1.6); } }
+.sw-f-red { fill: var(--sw-red); } .sw-f-green { fill: var(--sw-green); } .sw-f-yellow { fill: var(--sw-yellow); } .sw-f-teal { fill: var(--sw-teal); }
+.sw-f-todo, .sw-f-overlay0, .sw-f-subtext0, .sw-f-plain { fill: var(--sw-todo); } .sw-f-review, .sw-f-blue { fill: var(--sw-review); } .sw-f-auto { fill: var(--sw-auto); } .sw-f-queue { fill: var(--sw-queue); } .sw-f-accent, .sw-f-peach { fill: var(--accent, #f0a830); }
+.sw-s-red { stroke: var(--sw-red); } .sw-s-green { stroke: var(--sw-green); } .sw-s-yellow { stroke: var(--sw-yellow); } .sw-s-teal { stroke: var(--sw-teal); } .sw-s-todo, .sw-s-overlay0 { stroke: var(--sw-todo); }
+.sw-tlegend { display: flex; flex-wrap: wrap; gap: var(--space-2, 8px) var(--space-4, 16px); padding-top: var(--space-2, 8px); color: var(--sw-dim); font-size: var(--fs-xs, 13px); }
+.sw-tlegend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw-tk { display: inline-block; width: 10px; height: 10px; background: var(--sw-todo); }
+.sw-tk.is-c { border-radius: 50%; } .sw-tk.is-s { border-radius: 2px; }
+.sw-tk.is-d { width: 18px; height: 0; border-top: 2px dashed var(--sw-yellow); background: none; }
+.sw-tk.is-p { border-radius: 50%; background: none; border: 2px solid var(--sw-yellow); }
