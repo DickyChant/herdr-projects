@@ -1,9 +1,9 @@
-// The home page's topology (home.js): every machine and what runs on it, drawn live as a graph. The Boss (the board's
+// The home page's topology (home.js): every machine and what runs on it, drawn live as a graph, each node dragged where you like it. The Boss (the board's
 // coordinator of every machine) in the middle, each machine on a ring around it, and on an outer ring each machine's
 // agents (one per pane an agent runs in) and its tasks, in their status colours. A task that waits for another
 // (`--after`, on this machine or another) is a dashed arrow from the one it waits for. The same graph always lands in
 // the same places, so a redraw moves only what changed; a working node pulses. A node is a link, as its row is on the home page.
-/* global document */
+/* global document, window, localStorage, DOMPoint, setTimeout */
 const NS = "http://www.w3.org/2000/svg";
 const PANE_INK = { blocked: "red", working: "yellow", done: "teal", idle: "todo" };
 const W = 900, H = 560, CX = W / 2, CY = H / 2;
@@ -58,35 +58,85 @@ function layout(g) {
   return at;
 }
 
+// A node dragged somewhere else: how far from where the layout put it, kept over every redraw and reload (each
+// browser's own). A machine dragged takes its agents and tasks with it; one of them dragged moves alone.
+const MOVED = "sw-topo-moved";
+const moved = (() => { try { return new Map(Object.entries(JSON.parse(localStorage.getItem(MOVED) || "{}"))); } catch { return new Map(); } })();
+const keep = () => { try { localStorage.setItem(MOVED, JSON.stringify(Object.fromEntries(moved))); } catch {} };
+let dragging = false;
+export const isDragging = () => dragging;
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+function placed(g, base) {
+  const off = (id) => moved.get(id) || { dx: 0, dy: 0 }, at = new Map();
+  for (const n of g.nodes) {
+    const b = base.get(n.id), o = off(n.id), up = n.parent && n.parent !== "boss" ? off(n.parent) : { dx: 0, dy: 0 };
+    at.set(n.id, { x: clamp(b.x + o.dx + up.dx, 20, W - 20), y: clamp(b.y + o.dy + up.dy, 20, H - 20) });
+  }
+  return at;
+}
+
 const RADIUS = { boss: 26, machine: 18, agent: 11, task: 9 };
-function nodeEl(n, p, on) {
+function nodeEl(n, on, grab) {
   const r = RADIUS[n.kind];
   const shape = n.kind === "task" ? s("rect", { x: -r, y: -r, width: 2 * r, height: 2 * r, rx: 3, class: `sw-tnode sw-f-${n.color}` })
     : s("circle", { r, class: `sw-tnode sw-f-${n.color}${n.kind === "boss" ? " is-boss" : ""}` });
   const below = n.kind === "boss" || n.kind === "machine";
-  return s("g", { class: `sw-tn is-${n.kind}${n.live ? " is-live" : ""}`, transform: `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`, tabindex: n.kind === "boss" ? null : 0, role: n.kind === "boss" ? null : "button", onclick: () => on(n), onkeydown: (e) => { if (e.key === "Enter") on(n); } },
+  return s("g", { class: `sw-tn is-${n.kind}${n.live ? " is-live" : ""}`, tabindex: n.kind === "boss" ? null : 0, role: n.kind === "boss" ? null : "button", onpointerdown: (e) => grab(e, n), onclick: () => { if (!grab.swallow) on(n); }, onkeydown: (e) => { if (e.key === "Enter") on(n); } },
     s("title", {}, [n.label, n.title, n.sub].filter(Boolean).join(" · ")),
     n.live ? s("circle", { r: r + 4, class: `sw-tpulse sw-s-${n.color}` }) : null, shape,
     s("text", { y: below ? r + 15 : -r - 6, class: `sw-tlabel${below ? " is-strong" : ""}` }, cut(n.label, 16)),
     n.sub && below ? s("text", { y: r + 29, class: "sw-tsub" }, cut(n.sub, 22)) : null);
 }
+// A link's line, between where its two nodes stand now. A wait between tasks: a curve, so two on one line are told
+// apart, ending short of the task's box.
+function lineTo(el, l, a, b) {
+  if (l.kind === "own") { el.setAttribute("x1", a.x); el.setAttribute("y1", a.y); el.setAttribute("x2", b.x); el.setAttribute("y2", b.y); return; }
+  const mx = (a.x + b.x) / 2 + (b.y - a.y) * 0.25, my = (a.y + b.y) / 2 - (b.x - a.x) * 0.25, d = Math.hypot(b.x - mx, b.y - my) || 1, k = (RADIUS.task + 4) / d;
+  el.setAttribute("d", `M${a.x} ${a.y} Q${mx} ${my} ${b.x - (b.x - mx) * k} ${b.y - (b.y - my) * k}`);
+}
 
-// The panel's picture, drawn again whole when the graph changed.
+// The panel's picture, drawn again whole when the graph changed. A node is dragged with the mouse or a finger (a
+// press that moves more than a few pixels is a drag, not a click); Reset layout puts every node back.
 export function topologyEl(g, on) {
-  const at = layout(g);
+  const base = layout(g);
   const arrow = s("marker", { id: "sw-tarrow", viewBox: "0 0 10 10", refX: 10, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, s("path", { d: "M0 0 10 5 0 10z", class: "sw-tarrow" }));
-  const lines = g.links.map((l) => {
-    const a = at.get(l.from), b = at.get(l.to); if (!a || !b) return null;
-    if (l.kind === "own") return s("line", { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: "sw-tlink" });
-    // A wait between tasks: a curve, so two on one line are told apart, ending short of the task's box.
-    const mx = (a.x + b.x) / 2 + (b.y - a.y) * 0.25, my = (a.y + b.y) / 2 - (b.x - a.x) * 0.25, d = Math.hypot(b.x - mx, b.y - my) || 1, k = (RADIUS.task + 4) / d;
-    return s("path", { d: `M${a.x} ${a.y} Q${mx} ${my} ${b.x - (b.x - mx) * k} ${b.y - (b.y - my) * k}`, class: "sw-tafter", "marker-end": "url(#sw-tarrow)" });
-  });
+  const lines = g.links.filter((l) => base.has(l.from) && base.has(l.to)).map((l) => [l, l.kind === "own" ? s("line", { class: "sw-tlink" }) : s("path", { class: "sw-tafter", "marker-end": "url(#sw-tarrow)" })]);
+  const reset = document.createElement("button");
+  reset.type = "button"; reset.className = "btn btn-ghost sw-treset"; reset.textContent = "Reset layout";
+  reset.addEventListener("click", () => { moved.clear(); keep(); place(); });
+  const grab = (e, n) => {
+    if (e.button !== 0) return;
+    const m = svg.getScreenCTM(); if (!m) return;
+    const to = (ev) => new DOMPoint(ev.clientX, ev.clientY).matrixTransform(m.inverse()), from = to(e), was = moved.get(n.id) || { dx: 0, dy: 0 };
+    let went = false;
+    const move = (ev) => {
+      const p = to(ev), dx = p.x - from.x, dy = p.y - from.y;
+      if (!went && Math.hypot(dx, dy) < 4) return;
+      went = true; dragging = true; svg.classList.add("is-dragging");
+      moved.set(n.id, { dx: was.dx + dx, dy: was.dy + dy }); place();
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up);
+      svg.classList.remove("is-dragging");
+      if (went) { keep(); grab.swallow = true; setTimeout(() => { grab.swallow = false; }, 0); }
+      dragging = false;
+    };
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
+  };
+  const nodes = g.nodes.map((n) => [n, nodeEl(n, on, grab)]);
   const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, class: "sw-topo", role: "img", "aria-label": `Topology: ${g.nodes.filter((n) => n.kind === "machine").length} machines` },
-    s("defs", {}, arrow), s("g", {}, ...lines), s("g", {}, ...g.nodes.map((n) => nodeEl(n, at.get(n.id), on))));
+    s("defs", {}, arrow), s("g", {}, ...lines.map(([, el]) => el)), s("g", {}, ...nodes.map(([, el]) => el)));
+  function place() {
+    const at = placed(g, base);
+    for (const [n, el] of nodes) { const p = at.get(n.id); el.setAttribute("transform", `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`); }
+    for (const [l, el] of lines) lineTo(el, l, at.get(l.from), at.get(l.to));
+    reset.hidden = !g.nodes.some((n) => moved.has(n.id));
+  }
+  place();
   const legend = document.createElement("div");
   legend.className = "sw-tlegend";
-  legend.innerHTML = '<span><i class="sw-tk is-c"></i>machine / agent</span><span><i class="sw-tk is-s"></i>task</span><span><i class="sw-tk is-d"></i>waits for</span><span><i class="sw-tk is-p"></i>working</span>';
+  legend.innerHTML = '<span><i class="sw-tk is-c"></i>machine / agent</span><span><i class="sw-tk is-s"></i>task</span><span><i class="sw-tk is-d"></i>waits for</span><span><i class="sw-tk is-p"></i>working</span><span class="sw-tlegend-space"></span>';
+  legend.append(reset);
   const box = document.createElement("div"); box.className = "sw-topo-box"; box.append(svg, legend);
   return box;
 }

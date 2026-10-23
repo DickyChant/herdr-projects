@@ -6,7 +6,8 @@
 /* global document, window, location, history, sessionStorage, crypto */
 import { h, icon, markEl, ink, post } from "./dom.js";
 import { trapEscape } from "./sheets.js";
-import { graphOf, topologyEl } from "./topology.js";
+import { graphOf, topologyEl, isDragging } from "./topology.js";
+import { goTo } from "./talk.js";
 
 const API = "/herdr-projects/api", EVERY = 3000;
 const GROUP_INK = { "needs you": "red", "ready to approve": "green", working: "yellow", "to do": "todo", done: "teal" };
@@ -45,11 +46,11 @@ async function openTask(id) {
   goBoard();
 }
 const goBoard = () => { location.hash = "#board"; };
-// A pane picked here: the web UI's own view of it, on its machine (the address the web UI itself uses).
+// A pane picked here: the web UI's own view of it, on its machine, gone into as the board's Open agent goes (talk.js):
+// a change of address the web UI follows, not a page loaded again (one that drops a pane it does not know yet). The
+// new address has no `#home`, so the home page closes on the way.
 function openPane(machine, p) {
-  const q = new URLSearchParams({ ws: p.workspace_id, pane: p.pane_id, view: p.agent ? "chat" : "terminal" });
-  if (machine && machine !== "local") q.set("machine", machine);
-  location.href = `/?${q}`;
+  goTo({ machine: machine && machine !== "local" ? machine : "", workspace: p.workspace_id, pane: p.pane_id, view: p.agent ? "chat" : "terminal" });
 }
 
 const card = (title, extra, ...body) => h("section.sw-hcard", h("header.sw-hcard-head", h("h3", title), extra || null), ...body);
@@ -132,7 +133,8 @@ function draw() {
   if (!root) return;
   const now = JSON.stringify([data.boards, data.list?.groups, data.machines]);
   const when = part("when"); if (when) when.textContent = data.at ? `updated ${new Date(data.at).toLocaleTimeString()}` : "reading…";
-  if (now === drawn) return;
+  // Not under a node being dragged: the next look draws what changed meanwhile.
+  if (now === drawn || isDragging()) return;
   drawn = now;
   const groups = byGroup(data.list);
   part("grid").replaceChildren(h("div.sw-hwide", needsEl(groups)), h("div.sw-hwide", topoEl(groups)), countsEl(), machinesEl(), agentsEl(), recentEl(groups));

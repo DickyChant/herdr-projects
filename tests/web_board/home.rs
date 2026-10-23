@@ -21,3 +21,14 @@ fn the_home_page_reads_every_machine_with_a_client_of_its_own_and_draws_their_to
     assert!(TOPO.contains(r#"links.push({ from: `t:${up.id}`, to: `t:${t.id}`, kind: "after" })"#));
     for f in ["home.css", "home.js", "topology.js"] { assert!(PAGE.contains(&format!(r#"("{f}", include_str!("page/{f}")),"#)), "{f} is served"); }
 }
+
+#[test]
+fn a_pane_opens_as_the_boards_open_agent_does_and_the_topology_is_dragged() {
+    // Into a pane by a change of address the web UI follows (talk.js), not a page loaded again.
+    assert!(HOME.contains(r#"import { goTo } from "./talk.js";"#) && HOME.contains("goTo({ machine: machine && machine !== \"local\" ? machine : \"\", workspace: p.workspace_id, pane: p.pane_id"));
+    assert!(!HOME.contains("location.href = `/?${q}`"));
+    // A node dragged: kept per browser, a machine taking its own with it, a drag never a click, and no redraw under it.
+    assert!(TOPO.contains(r#"const MOVED = "sw-topo-moved";"#) && TOPO.contains("n.parent && n.parent !== \"boss\" ? off(n.parent)"));
+    assert!(TOPO.contains("onclick: () => { if (!grab.swallow) on(n); }") && TOPO.contains("Math.hypot(dx, dy) < 4"));
+    assert!(HOME.contains("if (now === drawn || isDragging()) return;") && TOPO.contains(r#"reset.textContent = "Reset layout";"#));
+}

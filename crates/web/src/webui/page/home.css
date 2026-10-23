@@ -38,8 +38,9 @@
 .sw-tlink { stroke: var(--sw-line); stroke-width: 1.5; }
 .sw-tafter { fill: none; stroke: var(--sw-yellow); stroke-width: 1.5; stroke-dasharray: 5 4; }
 .sw-tarrow { fill: var(--sw-yellow); }
-.sw-tn { cursor: pointer; outline: none; }
-.sw-tn.is-boss { cursor: default; }
+.sw-tn { cursor: grab; outline: none; touch-action: none; }
+.sw-topo.is-dragging, .sw-topo.is-dragging .sw-tn { cursor: grabbing; }
+.sw-topo.is-dragging .sw-tpulse { animation: none; }
 .sw-tnode { stroke: var(--sw-bg); stroke-width: 2; }
 .sw-tnode.is-boss { stroke: var(--sw-strong); stroke-width: 2.5; }
 .sw-tn:is(:hover, :focus-visible) .sw-tnode { stroke: var(--sw-strong); }
@@ -52,8 +53,10 @@
 .sw-f-red { fill: var(--sw-red); } .sw-f-green { fill: var(--sw-green); } .sw-f-yellow { fill: var(--sw-yellow); } .sw-f-teal { fill: var(--sw-teal); }
 .sw-f-todo, .sw-f-overlay0, .sw-f-subtext0, .sw-f-plain { fill: var(--sw-todo); } .sw-f-review, .sw-f-blue { fill: var(--sw-review); } .sw-f-auto { fill: var(--sw-auto); } .sw-f-queue { fill: var(--sw-queue); } .sw-f-accent, .sw-f-peach { fill: var(--accent, #f0a830); }
 .sw-s-red { stroke: var(--sw-red); } .sw-s-green { stroke: var(--sw-green); } .sw-s-yellow { stroke: var(--sw-yellow); } .sw-s-teal { stroke: var(--sw-teal); } .sw-s-todo, .sw-s-overlay0 { stroke: var(--sw-todo); }
-.sw-tlegend { display: flex; flex-wrap: wrap; gap: var(--space-2, 8px) var(--space-4, 16px); padding-top: var(--space-2, 8px); color: var(--sw-dim); font-size: var(--fs-xs, 13px); }
+.sw-tlegend { display: flex; flex-wrap: wrap; gap: var(--space-2, 8px) var(--space-4, 16px); padding-top: var(--space-2, 8px); color: var(--sw-dim); font-size: var(--fs-xs, 13px); align-items: center; }
 .sw-tlegend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw-tlegend-space { flex: 1; }
+.sw-treset[hidden] { display: none; }
 .sw-tk { display: inline-block; width: 10px; height: 10px; background: var(--sw-todo); }
 .sw-tk.is-c { border-radius: 50%; } .sw-tk.is-s { border-radius: 2px; }
 .sw-tk.is-d { width: 18px; height: 0; border-top: 2px dashed var(--sw-yellow); background: none; }
