@@ -46,12 +46,24 @@ function place() {
 function show(on) {
   if (on && location.hash !== HASH) history.pushState(history.state, "", location.pathname + location.search + HASH);
   if (!on && location.hash === HASH) history.replaceState(history.state, "", location.pathname + location.search);
+  if (on && isHomeOpen()) closeHome(); // a board picked from over the home page: the board, not both
   if (on) openBoard({ onClose: () => show(false) }); else closeBoard();
 }
 function goHome(on) {
   if (on && location.hash !== HOME) history.pushState(history.state, "", location.pathname + location.search + HOME);
   if (!on && location.hash === HOME) history.replaceState(history.state, "", location.pathname + location.search);
   follow();
+}
+// A pane or a space picked in the web UI's own sidebar (an agent's row, a space's row) while the home page or the
+// board stands over its view: they step aside, so what was picked shows. The pick is the web UI's own, left as it is;
+// our own entries (Home, Boards) and a row's menu button change nothing.
+const ROW = ".sidebar li.agent-item, .sidebar li.pane-item, .sidebar-shell li.agent-item, .sidebar-shell li.pane-item";
+function leave(e) {
+  if (!isHomeOpen() && !isOpen()) return;
+  const t = e.target;
+  if (!t?.closest || !t.closest(ROW) || t.closest("[data-sw-entry]") || t.closest(".row-menu-toggle")) return;
+  if (isHomeOpen()) goHome(false);
+  if (isOpen()) show(false);
 }
 function follow() {
   if (location.hash === HASH) { if (!isOpen()) openBoard({ onClose: () => show(false) }); } else if (isOpen()) closeBoard();
@@ -67,6 +79,7 @@ async function begin() {
   new MutationObserver(place).observe(document.body, { childList: true, subtree: true });
   window.addEventListener("hashchange", follow);
   window.addEventListener("popstate", follow);
+  document.addEventListener("click", leave, true);
   follow();
 }
 begin();
