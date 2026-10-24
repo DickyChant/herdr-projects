@@ -12,6 +12,7 @@
 import { setHome } from "./dom.js";
 import { sendsOn } from "./compose.js";
 import { keepList, STEPS } from "./keep.js";
+import { PANE_PATH } from "./talk.js";
 
 // The web UI's places this leans on (herdr-web-ui 0.4.12, and Ovis 0.4.13 under its new name: App.tsx,
 // PaneTerminal.tsx, Composer.tsx there).
@@ -30,7 +31,7 @@ function goHere(go) {
   for (const k of ["machine", "file", "settings", "section", "new", "cwd", "name", "agent", "sidebar"]) q.delete(k);
   if (go.machine) q.set("machine", go.machine);
   q.set("ws", go.workspace); q.set("pane", go.pane); q.set("view", "chat");
-  history.replaceState(history.state, "", `${location.pathname}?${q}${location.hash}`);
+  history.replaceState(history.state, "", `${PANE_PATH}?${q}${location.hash}`);
   window.dispatchEvent(new PopStateEvent("popstate", { state: history.state }));
 }
 // The web UI keeps the view of a pane it already shows: its own Chat button then.
@@ -56,7 +57,7 @@ const uploading = (box) => !!box.closest(COMPOSER)?.querySelector(".composer-att
 // does (a task's agent). `guest`: the board's button put in the web UI's box, beside its mic, while docked. The Coordinator's go through the board, as its own box sends them: with where you were (the
 // repo, the open task), and waiting while it is busy. It decides itself what to start, so there is no second way to send.
 export function dockFor({ boardOf, onChange, onTyping, route, guest = null }) {
-  let want = null, on = false, home = null, homeSearch = "", shown = "", wait = 0, typing = false, queued = false, boxH = -1, appH = "";
+  let want = null, on = false, home = null, homeSearch = "", homePath = "", shown = "", wait = 0, typing = false, queued = false, boxH = -1, appH = "";
   const mine = () => !!want && here(want) && !!document.querySelector(CHAT) && !!document.querySelector(COLUMN);
   // What the board covers, given to the web UI's pane column as room to leave: down to the foot of the board's bar, or
   // on a wide screen the width of the board's column under the bar.
@@ -176,7 +177,7 @@ export function dockFor({ boardOf, onChange, onTyping, route, guest = null }) {
       shown = key;
       clearTimeout(wait); wait = 0;
       if (!go) { want = null; set(false); return; }
-      if (home === null) { home = new URLSearchParams(location.search).get("machine") || ""; homeSearch = location.search; setHome(home); }
+      if (home === null) { home = new URLSearchParams(location.search).get("machine") || ""; homeSearch = location.search; homePath = location.pathname; setHome(home); }
       want = go;
       if (!here(go)) goHere(go);
       marks.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "aria-pressed"] });
@@ -197,7 +198,7 @@ export function dockFor({ boardOf, onChange, onTyping, route, guest = null }) {
       if (guest?.closest(".composer")) guest.remove(); // nothing of the board's stays in the web UI's box
       const back = !!want && here(want) && home !== null;
       want = null; set(false); setHome(null);
-      if (back && location.search !== homeSearch) { history.replaceState(history.state, "", `${location.pathname}${homeSearch}${location.hash}`); window.dispatchEvent(new PopStateEvent("popstate", { state: history.state })); }
+      if (back && (location.search !== homeSearch || location.pathname !== homePath)) { history.replaceState(history.state, "", `${homePath}${homeSearch}${location.hash}`); window.dispatchEvent(new PopStateEvent("popstate", { state: history.state })); }
     },
   };
 }

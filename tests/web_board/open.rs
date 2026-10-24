@@ -105,6 +105,6 @@ fn the_page_checks_that_the_web_ui_went_and_comes_back_with_a_word_when_it_did_n
     const BOARD: &str = include_str!("../../crates/web/src/webui/page/board.js");
     // written again a few times while the web UI shows neither the pane nor its space; then put back, and the board says so
     assert!(TALK.contains("if ((now === go.pane && shown(go)) || (now !== go.pane && now !== from) || location.hash) return;"));
-    assert!(TALK.contains("if (++tries > 3) { history.replaceState(null, \"\", `${location.pathname}${back}`); return missed?.(); }"));
+    assert!(TALK.contains("if (++tries > 3) { history.replaceState(null, \"\", back); return missed?.(); }"));
     assert!(BOARD.contains("goTo(snap.go, () => missed(snap.go))") && BOARD.contains("The web UI (Ovis) did not go to ${go.space ? `“${go.space}”` : \"the task's space\"}"));
 }

@@ -2,12 +2,15 @@
 /* global window, document, location, history, PopStateEvent, setTimeout */
 
 const paneNow = () => new URLSearchParams(location.search).get("pane") || "";
+// A pane's address is always at the web UI's root: from another of its pages (its DSH workspace at /dsh) a pane
+// picked here leaves that page, as one picked in its own sidebar does.
+export const PANE_PATH = "/";
 function write(go, push) {
   const q = new URLSearchParams(location.search);
   for (const k of ["machine", "file", "settings", "section", "new", "cwd", "name", "agent", "sidebar"]) q.delete(k);
   if (go.machine) q.set("machine", go.machine); // on another of the web UI's PCs: its own name for it
   q.set("ws", go.workspace); q.set("pane", go.pane); q.set("view", go.view);
-  history[push ? "pushState" : "replaceState"](null, "", `${location.pathname}?${q}`);
+  history[push ? "pushState" : "replaceState"](null, "", `${PANE_PATH}?${q}`);
   window.dispatchEvent(new PopStateEvent("popstate", { state: null }));
 }
 // Does the web UI show that space here? Its sidebar names each space's row by a pane of it (`data-pane`, Ovis 0.4.13);
@@ -23,12 +26,12 @@ function shown(go) {
 // is written again a few times, a second apart; when the web UI still did not go, its address is put back and
 // `missed` is called. Somewhere else picked meanwhile (another pane, the board again) ends the tries.
 export function goTo(go, missed) {
-  const from = paneNow(), back = location.search;
+  const from = paneNow(), back = location.pathname + location.search;
   let tries = 0;
   const check = () => {
     const now = paneNow();
     if ((now === go.pane && shown(go)) || (now !== go.pane && now !== from) || location.hash) return;
-    if (++tries > 3) { history.replaceState(null, "", `${location.pathname}${back}`); return missed?.(); }
+    if (++tries > 3) { history.replaceState(null, "", back); return missed?.(); }
     write(go, false);
     setTimeout(check, 1000);
   };

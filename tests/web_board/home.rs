@@ -40,3 +40,14 @@ fn a_pick_in_the_web_uis_own_sidebar_closes_the_home_page_and_the_board() {
     assert!(START.contains("if (on && isHomeOpen()) closeHome();"));
     assert!(START.contains(r#"t.closest("[data-sw-entry]") || t.closest(".row-menu-toggle")"#) && START.contains("if (isHomeOpen()) goHome(false);"));
 }
+
+#[test]
+fn a_pane_link_goes_to_the_web_uis_root_from_any_of_its_pages() {
+    // From the web UI's DSH workspace (/dsh) a pane picked on the board, the home page or the docked chat leaves it.
+    const TALK: &str = include_str!("../../crates/web/src/webui/page/talk.js");
+    const DOCK: &str = include_str!("../../crates/web/src/webui/page/dock.js");
+    assert!(TALK.contains(r#"export const PANE_PATH = "/";"#) && TALK.contains("`${PANE_PATH}?${q}`") && TALK.contains("back = location.pathname + location.search;"));
+    assert!(DOCK.contains(r#"import { PANE_PATH } from "./talk.js";"#) && DOCK.contains("`${PANE_PATH}?${q}${location.hash}`") && DOCK.contains("homePath = location.pathname;"));
+    // Home and the board themselves stay on the page they were opened over (`/dsh#home`).
+    assert!(START.contains("location.pathname + location.search + HOME"));
+}

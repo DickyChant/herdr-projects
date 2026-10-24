@@ -63,13 +63,13 @@ fn the_page_docks_that_chat_in_place_and_puts_the_web_ui_back_when_the_board_clo
     assert!(BOARD_JS.contains(r#"const out = await call("dock");"#) && BOARD_JS.contains("if (root && chat && n === docking && out.ok) chat.native(out.dock || null);"));
     assert!(CHAT.contains("if (whose !== lastWho) { lastWho = whose; asked = \"\"; }") && CHAT.contains("ask(dock.on() ? whose : JSON.stringify([whose, c.status]));"));
     // in place: the address keeps #board (Back still closes the board), and the web UI follows it as it follows Back
-    assert!(DOCK.contains("history.replaceState(history.state, \"\", `${location.pathname}?${q}${location.hash}`);") && DOCK.contains(r#"window.dispatchEvent(new PopStateEvent("popstate", { state: history.state }));"#));
+    assert!(DOCK.contains("history.replaceState(history.state, \"\", `${PANE_PATH}?${q}${location.hash}`);") && DOCK.contains(r#"window.dispatchEvent(new PopStateEvent("popstate", { state: history.state }));"#));
     // the web UI keeps the view of a pane it shows: its own Chat button then; not shown in time, the board's own chat
     assert!(DOCK.contains(r#"const btn = document.querySelector(".view-switch button");"#) && DOCK.contains("wait = setTimeout(() => { wait = 0; if (!mine()) { want = null; set(false); } }, WAIT_MS);"));
     // another pane picked in the web UI's own sidebar undocks it
     assert!(DOCK.contains("if (on && !here(want)) { want = null; shown = \"\"; set(false); }"));
     // closing the board puts the web UI back on the pane it showed, where it still shows the docked one
-    assert!(DOCK.contains("if (back && location.search !== homeSearch) { history.replaceState(history.state, \"\", `${location.pathname}${homeSearch}${location.hash}`);"));
+    assert!(DOCK.contains("if (back && (location.search !== homeSearch || location.pathname !== homePath)) { history.replaceState(history.state, \"\", `${homePath}${homeSearch}${location.hash}`);"));
     // the board stays the board of the PC the page was on, while the chat docked is on another
     assert!(DOM.contains("const machine = () => { if (home !== null) return home;") && DOCK.contains("setHome(home);") && DOCK.contains("setHome(null);"));
     // the web UI's pane column leaves the board its room, its glass header and tabs step aside, the board under its menus
