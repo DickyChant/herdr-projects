@@ -10,6 +10,7 @@ pub mod after;
 pub mod attempts;
 pub mod automations;
 pub mod autopilot;
+pub mod bots;
 pub mod calls;
 pub mod coordinator;
 pub mod delegate;

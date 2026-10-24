@@ -4,6 +4,7 @@
 // (`--after`, on this machine or another) is a dashed arrow from the one it waits for. The same graph always lands in
 // the same places, so a redraw moves only what changed; a working node pulses. A node is a link, as its row is on the home page.
 /* global document, window, localStorage, DOMPoint, setTimeout */
+import { BOT_INK, BOT_WORDS, runtimeId, botId, botPath } from "./bots.js";
 const NS = "http://www.w3.org/2000/svg";
 const PANE_INK = { blocked: "red", working: "yellow", done: "teal", idle: "todo" };
 const W = 900, H = 560, CX = W / 2, CY = H / 2;
@@ -13,18 +14,31 @@ const cut = (t, n) => (t.length > n ? `${t.slice(0, n - 1)}…` : t);
 
 // The graph as nodes and links, from what the home page read: the web UI's machines (their panes) and the board's
 // tasks (each with its machine's name). Machines with nothing on them are drawn too: their state is worth seeing.
-export function graphOf(machines, tasks, boss) {
+export function graphOf(machines, tasks, boss, directory = null) {
   const nodes = [{ id: "boss", kind: "boss", label: "Boss", sub: boss.sub, color: boss.color }], links = [];
   (machines || []).forEach((m) => {
     const id = `m:${m.id}`;
     nodes.push({ id, kind: "machine", label: m.name, sub: m.state === "connected" ? "" : m.state, color: m.state === "connected" ? "green" : "red", machine: m });
     links.push({ from: "boss", to: id, kind: "own" });
-    for (const p of (m.snapshot?.panes || []).filter((x) => x.agent)) {
+    for (const p of (m.snapshot?.panes || []).filter((x) => x.agent && x.agent !== "dsh-web")) {
       const st = p.agent_status || "unknown";
       nodes.push({ id: `p:${m.id}:${p.pane_id}`, kind: "agent", label: p.agent, sub: st, color: PANE_INK[st] || "overlay0", live: st === "working", parent: id, machine: m, pane: p });
       links.push({ from: id, to: `p:${m.id}:${p.pane_id}`, kind: "own" });
     }
   });
+  // Bots belong to a stable DSH runtime, not to its replaceable supervisor pane.
+  const machine = (machines || []).find((m) => m.id === directory?.machineId);
+  if (machine && directory?.runtimeId) {
+    const id = runtimeId(directory), online = directory.state === "online";
+    const supervisor = (machine.snapshot?.panes || []).find((p) => p.agent === "dsh-web");
+    nodes.push({ id, kind: "runtime", label: "DSH", sub: online ? "Connected" : directory.state, color: online ? "review" : "overlay0", parent: `m:${machine.id}`, machine, title: supervisor ? `Service pane ${supervisor.pane_id}` : "DSH runtime" });
+    links.push({ from: `m:${machine.id}`, to: id, kind: "own" });
+    for (const bot of directory.bots) {
+      const key = botId(directory, bot), st = online ? bot.status : "unknown";
+      nodes.push({ id: key, kind: "bot", label: bot.name, sub: BOT_WORDS[st], title: bot.role, color: BOT_INK[st], live: st === "working", parent: id, machine, bot, path: botPath(directory, bot) });
+      links.push({ from: id, to: key, kind: "own" });
+    }
+  }
   // A task under its machine (the one the board names; this machine's are named as the web UI names this machine).
   const home = (machines || []).find((m) => m.kind === "local");
   for (const t of tasks || []) {
@@ -42,7 +56,7 @@ export function graphOf(machines, tasks, boss) {
 
 // Where each node stands: machines evenly on the inner ring, each one's agents and tasks fanned out on the outer ring
 // in its own slice of it. The same graph always lands the same way, so a redraw only moves what changed.
-function layout(g) {
+export function layout(g) {
   const at = new Map([["boss", { x: CX, y: CY }]]);
   const machines = g.nodes.filter((n) => n.kind === "machine"), R1 = Math.min(W, H) * 0.24, R2 = Math.min(W, H) * 0.44;
   machines.forEach((m, i) => {
@@ -54,6 +68,15 @@ function layout(g) {
       at.set(k.id, { x: CX + r * Math.cos(b), y: CY + r * 0.92 * Math.sin(b) });
     });
   });
+  // Fan Bot children around their runtime. Machine and runtime drag offsets propagate below.
+  for (const runtime of g.nodes.filter((n) => n.kind === "runtime")) {
+    const base = at.get(runtime.id), kids = g.nodes.filter((n) => n.parent === runtime.id);
+    kids.forEach((n, i) => {
+      const angle = Math.atan2(base.y - CY, base.x - CX) + (i - (kids.length - 1) / 2) * 0.7;
+      const radius = 68 + Math.floor(i / 8) * 35;
+      at.set(n.id, { x: clamp(base.x + Math.cos(angle) * radius, 35, W - 35), y: clamp(base.y + Math.sin(angle) * radius, 35, H - 35) });
+    });
+  }
   g.nodes.filter((n) => !at.has(n.id)).forEach((n, i) => at.set(n.id, { x: CX + (i - 1) * 70, y: CY + 90 }));
   return at;
 }
@@ -69,19 +92,21 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 function placed(g, base) {
   const off = (id) => moved.get(id) || { dx: 0, dy: 0 }, at = new Map();
   for (const n of g.nodes) {
-    const b = base.get(n.id), o = off(n.id), up = n.parent && n.parent !== "boss" ? off(n.parent) : { dx: 0, dy: 0 };
+    const b = base.get(n.id), o = off(n.id), up = n.parent && n.parent !== "boss" ? { ...off(n.parent) } : { dx: 0, dy: 0 };
+    const parent = g.nodes.find((p) => p.id === n.parent);
+    if (parent?.kind === "runtime" && parent.parent) { const ancestor = off(parent.parent); up.dx += ancestor.dx; up.dy += ancestor.dy; }
     at.set(n.id, { x: clamp(b.x + o.dx + up.dx, 20, W - 20), y: clamp(b.y + o.dy + up.dy, 20, H - 20) });
   }
   return at;
 }
 
-const RADIUS = { boss: 26, machine: 18, agent: 11, task: 9 };
+const RADIUS = { boss: 26, machine: 18, agent: 11, task: 9, runtime: 16, bot: 11 };
 function nodeEl(n, on, grab) {
   const r = RADIUS[n.kind];
   const shape = n.kind === "task" ? s("rect", { x: -r, y: -r, width: 2 * r, height: 2 * r, rx: 3, class: `sw-tnode sw-f-${n.color}` })
     : s("circle", { r, class: `sw-tnode sw-f-${n.color}${n.kind === "boss" ? " is-boss" : ""}` });
-  const below = n.kind === "boss" || n.kind === "machine";
-  return s("g", { class: `sw-tn is-${n.kind}${n.live ? " is-live" : ""}`, tabindex: n.kind === "boss" ? null : 0, role: n.kind === "boss" ? null : "button", onpointerdown: (e) => grab(e, n), onclick: () => { if (!grab.swallow) on(n); }, onkeydown: (e) => { if (e.key === "Enter") on(n); } },
+  const below = n.kind === "boss" || n.kind === "machine" || n.kind === "runtime";
+  return s("g", { "data-node-id": n.id, "aria-label": [n.label, n.sub].filter(Boolean).join(" · "), class: `sw-tn is-${n.kind}${n.live ? " is-live" : ""}`, tabindex: n.kind === "boss" ? null : 0, role: n.kind === "boss" ? null : "button", onpointerdown: (e) => grab(e, n), onclick: () => { if (!grab.swallow) on(n); }, onkeydown: (e) => { if (e.key === "Enter") on(n); } },
     s("title", {}, [n.label, n.title, n.sub].filter(Boolean).join(" · ")),
     n.live ? s("circle", { r: r + 4, class: `sw-tpulse sw-s-${n.color}` }) : null, shape,
     s("text", { y: below ? r + 15 : -r - 6, class: `sw-tlabel${below ? " is-strong" : ""}` }, cut(n.label, 16)),
@@ -135,7 +160,7 @@ export function topologyEl(g, on) {
   place();
   const legend = document.createElement("div");
   legend.className = "sw-tlegend";
-  legend.innerHTML = '<span><i class="sw-tk is-c"></i>machine / agent</span><span><i class="sw-tk is-s"></i>task</span><span><i class="sw-tk is-d"></i>waits for</span><span><i class="sw-tk is-p"></i>working</span><span class="sw-tlegend-space"></span>';
+  legend.innerHTML = '<span><i class="sw-tk is-c"></i>machine / agent / Bot</span><span><i class="sw-tk is-s"></i>task</span><span><i class="sw-tk is-d"></i>waits for</span><span><i class="sw-tk is-p"></i>working</span><span class="sw-tlegend-space"></span>';
   legend.append(reset);
   const box = document.createElement("div"); box.className = "sw-topo-box"; box.append(svg, legend);
   return box;

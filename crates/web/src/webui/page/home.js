@@ -7,6 +7,7 @@
 import { h, icon, markEl, ink, post } from "./dom.js";
 import { trapEscape } from "./sheets.js";
 import { graphOf, topologyEl, isDragging } from "./topology.js";
+import { readBots, needsBots, botEl, botsEl } from "./bots.js";
 import { goTo } from "./talk.js";
 
 const API = "/herdr-projects/api", EVERY = 3000;
@@ -18,25 +19,36 @@ const me = (() => {
   catch { return `h${Math.random().toString(36).slice(2, 15)}`; }
 })();
 async function ask(url, opts) {
-  try { const r = await fetch(url, { credentials: "same-origin", cache: "no-store", ...opts }); const j = await r.json().catch(() => ({})); return { ...j, ok: r.ok && j.ok !== false }; }
+  try { const r = await fetch(url, { credentials: "same-origin", cache: "no-store", signal: AbortSignal.timeout(8000), ...opts }); const j = await r.json().catch(() => ({})); return { ...j, ok: r.ok && j.ok !== false }; }
   catch { return { ok: false }; }
 }
 const board = (what, body) => ask(`${API}/${what}?${new URLSearchParams({ client: me, machine: "" })}`, body ? { method: "POST", headers: { "content-type": "application/json", "x-herdr-projects": "1" }, body: JSON.stringify(body) } : undefined);
 
 let root = null, timer = null, untrap = null, closing = null, scoped = false, drawn = "";
-let data = { boards: null, list: null, machines: null, at: 0 };
+let fetching = false, abort = null;
+let data = { boards: null, list: null, machines: null, bots: null, at: 0 };
 export const isHomeOpen = () => !!root;
 
 async function refresh() {
-  const [b, m] = await Promise.all([board("boards"), ask("/api/machines")]);
+  if (fetching || !root) return;
+  fetching = true;
+  const controller = abort = new AbortController();
+  const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(8000)]);
+  const [b, m, bots] = await Promise.all([board("boards"), ask("/api/machines"), readBots(data.bots, signal)]);
+  if (controller.signal.aborted || !root) { fetching = false; return; }
+  const lostBots = data.bots !== null && bots === null;
+  data.bots = bots;
+  if (lostBots) draw(true);
   if (b.ok) data.boards = b;
   // Every machine's tasks: the home page's board shows all of them once there is another machine.
   if (b.ok && !scoped && b.boards?.some((x) => x.scope === "*")) { scoped = (await board("scope", { to: "*" })).ok; }
   const s = await board("board");
+  if (controller.signal.aborted || !root) { fetching = false; return; }
   if (s.ok) data.list = s.list;
   if (m.ok || Array.isArray(m.machines)) data.machines = m.machines || [];
   data.at = Date.now();
   draw();
+  fetching = false;
 }
 
 // A task picked here: the board opens on it (every machine's board when it is another machine's task).
@@ -80,14 +92,15 @@ function paneEl(m, p) {
     h("span.sw-hmain", h("span.sw-hline1", h("span.sw-hid", p.agent), h("span.sw-htitle", p.terminal_title_stripped || p.label || p.cwd || p.pane_id))),
     h("span.sw-hside", h("span.sw-hchip", m.name), h(`span.sw-hstate.sw-c-${PANE_INK[st] || "overlay0"}`, st)));
 }
-const agentsOf = (m) => (m.snapshot?.panes || []).filter((p) => p.agent);
+const agentsOf = (m) => (m.snapshot?.panes || []).filter((p) => p.agent && p.agent !== "dsh-web");
 
 function needsEl(groups) {
   const tasks = [...(groups["needs you"] || []), ...(groups["ready to approve"] || [])];
   const waiting = (data.machines || []).flatMap((m) => agentsOf(m).filter((p) => p.agent_status === "blocked").map((p) => paneEl(m, p)));
-  const n = tasks.length + waiting.length;
+  const bots = needsBots(data.bots).map((b) => botEl(data.bots, b));
+  const n = tasks.length + waiting.length + bots.length;
   return card(`Needs you`, h(`span.sw-hcount${n ? ".is-hot" : ""}`, String(n)),
-    n ? h("ul.sw-hlist", tasks.map(taskEl), waiting) : empty("Nothing needs you. Every agent is working or at rest."));
+    n ? h("ul.sw-hlist", tasks.map(taskEl), waiting, bots) : empty("Nothing needs you. Every agent is working or at rest."));
 }
 function countsEl() {
   const b = data.boards, all = b?.boards?.find((x) => x.scope === "*") || b?.boards?.[0];
@@ -118,9 +131,9 @@ function agentsEl() {
 // The live graph: the Boss, every machine, and each one's agents and tasks, with the tasks' waits as arrows.
 function topoEl(groups) {
   const tasks = Object.entries(groups).flatMap(([group, rs]) => rs.map((r) => ({ ...r, group })));
-  const need = (groups["needs you"] || []).length;
-  const g = graphOf(data.machines, tasks, { sub: need ? `${need} need${need === 1 ? "s" : ""} you` : "all quiet", color: need ? "red" : "accent" });
-  const on = (n) => { if (n.task) openTask(n.task.id); else if (n.pane) openPane(n.machine.id, n.pane); else if (n.machine) location.href = n.machine.id === "local" ? "/" : `/?machine=${encodeURIComponent(n.machine.id)}`; };
+  const need = (groups["needs you"] || []).length + needsBots(data.bots).length;
+  const g = graphOf(data.machines, tasks, { sub: need ? `${need} need${need === 1 ? "s" : ""} you` : "all quiet", color: need ? "red" : "accent" }, data.bots);
+  const on = (n) => { if (n.bot) location.href = n.path; else if (n.kind === "runtime") location.href = "/dsh"; else if (n.task) openTask(n.task.id); else if (n.pane) openPane(n.machine.id, n.pane); else if (n.machine) location.href = n.machine.id === "local" ? "/" : `/?machine=${encodeURIComponent(n.machine.id)}`; };
   const waits = g.links.filter((l) => l.kind === "after").length;
   return card("Topology", h("span.sw-hcount", `${g.nodes.length - 1} nodes${waits ? ` · ${waits} wait${waits === 1 ? "" : "s"}` : ""}`), topologyEl(g, on));
 }
@@ -129,15 +142,15 @@ function recentEl(groups) {
   return card("Recently done", null, done.length ? h("ul.sw-hlist", done.map(taskEl)) : empty("Nothing finished yet."));
 }
 
-function draw() {
+function draw(force = false) {
   if (!root) return;
-  const now = JSON.stringify([data.boards, data.list?.groups, data.machines]);
+  const now = JSON.stringify([data.boards, data.list?.groups, data.machines, data.bots]);
   const when = part("when"); if (when) when.textContent = data.at ? `updated ${new Date(data.at).toLocaleTimeString()}` : "reading…";
   // Not under a node being dragged: the next look draws what changed meanwhile.
-  if (now === drawn || isDragging()) return;
+  if (!force && (now === drawn || isDragging())) return;
   drawn = now;
   const groups = byGroup(data.list);
-  part("grid").replaceChildren(h("div.sw-hwide", needsEl(groups)), h("div.sw-hwide", topoEl(groups)), countsEl(), machinesEl(), agentsEl(), recentEl(groups));
+  part("grid").replaceChildren(h("div.sw-hwide", needsEl(groups)), h("div.sw-hwide", topoEl(groups)), countsEl(), machinesEl(), ...(data.bots && data.bots.state !== "not_configured" ? [botsEl(data.bots)] : []), agentsEl(), recentEl(groups));
 }
 const part = (name) => root?.querySelector(`.sw-home-${name}`);
 
@@ -167,6 +180,7 @@ export function openHome({ onClose }) {
 export function closeHome() {
   if (!root) return;
   const was = root; root = null;
+  abort?.abort();
   clearInterval(timer); timer = null; untrap?.(); untrap = null;
   window.removeEventListener("resize", fit);
   was.remove();

@@ -61,3 +61,10 @@
 .sw-tk.is-c { border-radius: 50%; } .sw-tk.is-s { border-radius: 2px; }
 .sw-tk.is-d { width: 18px; height: 0; border-top: 2px dashed var(--sw-yellow); background: none; }
 .sw-tk.is-p { border-radius: 50%; background: none; border: 2px solid var(--sw-yellow); }
+
+/* Bot rows link to the native workspace; the service is a separate runtime node. */
+.sw-hbotlink { display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; color: inherit; text-decoration: none; }
+.sw-hbotstatus { margin: 0; padding: 8px 16px; color: var(--sw-dim); font-size: 13px; }
+.sw-tn.is-runtime .sw-tnode { stroke: var(--sw-review); stroke-width: 2; }
+.sw-tn.is-bot .sw-tnode { stroke-dasharray: 3 2; }
+@media (max-width: 480px) { .sw-hbotlink .sw-hside { flex-direction: column; align-items: flex-end; gap: 2px; } }

@@ -9,6 +9,7 @@ mod design;
 mod columns;
 // The home page and its topology: its own file, a module of this one.
 mod home;
+mod bots;
 // Open this task's agent on a space that was closed, and the web UI that does not show it yet.
 mod open;
 use common::*;

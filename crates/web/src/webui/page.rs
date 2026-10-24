@@ -8,6 +8,7 @@ const FILES: &[(&str, &str)] = &[
     ("board.js", include_str!("page/board.js")),
     ("boards.css", include_str!("page/boards.css")),
     ("boards.js", include_str!("page/boards.js")),
+    ("bots.js", include_str!("page/bots.js")),
     ("call.css", include_str!("page/call.css")),
     ("call.js", include_str!("page/call.js")),
     ("callbtn.js", include_str!("page/callbtn.js")),

@@ -57,6 +57,13 @@ fn run(cmd: &str, a: &Args) -> Res<i32> {
     // A flag the command does not know is refused before anything is done, with the nearest right one named
     // (cli/flags.rs). Every command: the ones herdr, a hook and the board itself run too.
     refuse_unknown(cmd, a)?;
+    // A roster read starts no board jobs and performs no install/data migration.
+    if cmd == "bots" && !a.flags.b("help") {
+        if a.pos.len() != 1 { crate::fail!("bots is read-only: use herdr-projects bots [--json]"); }
+        let v = crate::bots::snapshot();
+        println!("{}", if a.flags.b("json") { serde_json::to_string_pretty(&v).unwrap_or_default() } else { crate::bots::text(&v) });
+        return Ok(0);
+    }
     crate::take_over::at_start(cmd); // older installs taken over: herdr-superwork's, the old herdr-projects 0.2's (take_over.rs)
     home_at_start(cmd); // an older version's folders move into the one home folder, once (store/move_home.rs)
     crate::store::old_copy::copy_at_start(cmd); // …then a copy of the data an older (Node) version wrote, once (store/old_copy.rs)
