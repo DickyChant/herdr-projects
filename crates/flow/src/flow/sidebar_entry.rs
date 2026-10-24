@@ -45,6 +45,15 @@ pub fn entry_of(t: &Obj, who_is: &str, now: i64) -> Entry {
     Entry { name: task_name(t), place, stands: cut(&words(&stands)), age, line: String::new(), progress: [f.percent.text(), eta].into_iter().filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ") }
 }
 pub fn reviewer_entry(t: &Obj, now: i64) -> Entry { entry_of(t, who::REVIEWER, now) }
+/// The reviewer's pane title: the task's name and `· review`, so that a web UI that shows only titles tells the task's
+/// two panes apart. The title is cut short first: the word stays.
+pub fn reviewer_title(name: &str) -> String {
+    let all: Vec<char> = name.chars().collect();
+    let room = CAP - REVIEW.chars().count();
+    let base = if all.len() <= room { name.to_string() } else { format!("{}…", all[..room - 1].iter().collect::<String>().trim_end()) };
+    format!("{base}{REVIEW}")
+}
+const REVIEW: &str = " · review";
 /// The Coordinator's: its name and where it stands as the line above the board's box says it, and its last message.
 pub fn coordinator_entry(state_word: &str, waiting: usize, said: &str) -> Entry { named_coordinator_entry(COORDINATOR, state_word, waiting, said) }
 /// Any coordinator's, under its own name ("vm-str coordinator").

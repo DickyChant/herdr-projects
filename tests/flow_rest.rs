@@ -30,7 +30,7 @@ fn the_finish_lines_sidebar_entries_are_written_once_again_only_when_a_word_chan
     let ws: Vec<String> = st.arr("metadata").iter().filter(|m| m.s("workspace") == t.at("link").s("workspace")).map(args_of).collect();
     assert!(has(ws.last().unwrap(), r"--clear-token summary --clear-token progress$"), "{ws:?}");
     // On its way here the reviewer's pane had an entry of its own from its start, naming the reviewer.
-    assert!(st.arr("metadata").iter().any(|m| m.b("pane") && m.s("pane") != pane && args_of(m).contains("--display-agent reviewer · under review · R#1 · <1m --title PRJ-1 Add a greeting")), "the reviewer's own entry");
+    assert!(st.arr("metadata").iter().any(|m| m.b("pane") && m.s("pane") != pane && args_of(m).contains("--display-agent reviewer · under review · R#1 · <1m --title PRJ-1 Add a greeting · review")), "the reviewer's own entry");
     assert_eq!(agent_of(&w, &pane).s("kind"), "claude");
     let calls = || w.state().arr("metadata").iter().filter(|m| m.s("pane") == pane).map(args_of).collect::<Vec<_>>();
     let last = || calls().last().cloned().unwrap_or_default();
@@ -74,4 +74,13 @@ fn the_finish_lines_sidebar_entries_are_written_once_again_only_when_a_word_chan
     let done = settle(&id);
     assert_eq!(done.s("stage"), "done", "{}", done.at("failure"));
     assert!(!std::path::Path::new(t.s("worktree")).exists(), "worktree removed");
+}
+
+#[test]
+fn the_reviewers_pane_title_ends_in_review_and_a_long_title_is_cut_before_it() {
+    use sw::flow::sidebar_entry::{reviewer_title, CAP};
+    assert_eq!(reviewer_title("PRJ-1 Add a greeting"), "PRJ-1 Add a greeting · review");
+    let long = format!("PRJ-2 {}", "word ".repeat(30));
+    let t = reviewer_title(long.trim_end());
+    assert!(t.ends_with("… · review") && t.chars().count() <= CAP, "{t}");
 }

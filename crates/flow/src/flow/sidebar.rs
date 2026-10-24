@@ -7,7 +7,7 @@
 //! changed; taken off again when the task is archived or removed while its pane lives on. Never into a pane or space
 //! that is no longer the task's (herdr hands their ids out again), nor ever into a coordinator's.
 use super::live::{owns_pane, saved};
-use super::sidebar_entry::{entry_of, reviewer_entry, task_name, Entry};
+use super::sidebar_entry::{entry_of, reviewer_entry, reviewer_title, task_name, Entry};
 use super::task::is_agent_task;
 use crate::herdr::cli::{args, current_socket, session_name};
 use crate::herdr::Herdr;
@@ -39,7 +39,7 @@ fn wanted(t: &Obj, now: i64) -> Vec<Write> {
     let pane = t.at("link").t("pane");
     { let (api, e2, p) = (api.clone(), e.clone(), pane.clone()); out.push((format!("e|{socket}|{pane}"), json!(e), Box::new(move || api.metadata(&p, &pane_args(&e2, &e2.name)).is_some()))); }
     let rv = t.at("link").at("reviewer").t("pane");
-    if !rv.is_empty() { let r = reviewer_entry(t, now); let (api, name) = (api.clone(), e.name.clone()); let rv2 = rv.clone(); let r2 = r.clone(); out.push((format!("e|{socket}|{rv}"), json!(r), Box::new(move || api.metadata(&rv2, &pane_args(&r2, &name)).is_some()))); }
+    if !rv.is_empty() { let r = reviewer_entry(t, now); let (api, name) = (api.clone(), reviewer_title(&e.name)); let rv2 = rv.clone(); let r2 = r.clone(); out.push((format!("e|{socket}|{rv}"), json!(r), Box::new(move || api.metadata(&rv2, &pane_args(&r2, &name)).is_some()))); }
     // The task's space: its name is the task's number and title, and under it the row's numbers. One writer. Only
     // while its pane is in it: a space removed by hand leaves its id to the next one herdr opens.
     let pane_ws = t.at("live").at("pane").at("workspace_id");

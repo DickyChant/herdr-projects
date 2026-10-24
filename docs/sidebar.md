@@ -27,7 +27,9 @@ To get all three rows, let the board add its sidebar rows to Herdr's config on i
 
 As on the board: `HSW-152 …`, the repo's key and its number ([task numbers](task-numbers.md)). The number comes first
 and Herdr cuts a row at its end, so a narrow sidebar cuts the title, never the number. The machine's name stands before
-it only where the sidebar shows more than one machine: that is Herdr's own `machine` token.
+it only where the sidebar shows more than one machine: that is Herdr's own `machine` token. The reviewer's entry ends
+in `· review` (`HSW-152 Show automations… · review`), so that a web UI that shows only the title (Ovis) tells the
+task's two panes apart; a long title is cut before it, never the word.
 
 ### Row 2: who is on it and where it stands
 
