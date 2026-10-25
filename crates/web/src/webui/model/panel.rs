@@ -65,7 +65,8 @@ pub fn panel_of(s: &mut State, t: &Theme, r: &Obj) -> Value {
         } } } }
     }
     let task = r.has("title");
-    json!({ "id": r.s("id"), "tag": if task { crate::board::tags::number_tag(r, &s.data.keys, &s.scope, true) } else { String::new() }, "title": if task { r.t("title") } else { r.t("text") }, "task": task, "parts": parts })
+    let handoff = if task && !r.b("host") { crate::bot_handoff::view(r.s("id")).ok() } else { None };
+    json!({ "handoff": handoff, "handoffClosed": r.s("state") == "done" || r.b("archivedAt"), "handoffLocal": task && !r.b("host"), "id": r.s("id"), "tag": if task { crate::board::tags::number_tag(r, &s.data.keys, &s.scope, true) } else { String::new() }, "title": if task { r.t("title") } else { r.t("text") }, "task": task, "parts": parts })
 }
 /// One automation, whole. Each firing that made a task carries its id (`go`): the page goes to that task from it.
 pub fn auto_panel_of(s: &mut State, t: &Theme, a: &Obj) -> Value {

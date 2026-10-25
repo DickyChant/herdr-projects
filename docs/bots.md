@@ -19,7 +19,7 @@ Home polls every three seconds while visible. Offline, failed or older-than-15-s
 
 The command currently discovers only the local runtime exposed by Ovis. It reports unavailable, incompatible, access-required and not-configured states explicitly. It does not infer Bots on remote machines. Boss can read this roster on demand; this does not add automatic Boss wakeups.
 
-Chief continues to coordinate the DSH team. Boss's standing instructions explain the boundary and the roster command; an existing Coordinator receives updated instructions with its next normal turn. The board remains the record for board tasks, and DSH for Bot conversations. Cross-system delegation and linked tasks are a later step.
+Chief continues to coordinate the DSH team. Boss's standing instructions explain the boundary and the roster command; an existing Coordinator receives updated instructions with its next normal turn. The board remains the record for board tasks, and DSH for Bot conversations. Scoped Chief handoffs are described in [Boss to Chief handoffs](bot-handoff.md).
 
 ## Checking the feature
 

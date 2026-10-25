@@ -3,6 +3,7 @@
 // parts and the buttons come from the board (webui/panel-model.js, webui/side-model.js); this file lays them out.
 // Under it, All settings: every work setting of the task (or automation) with its plain label, what it means, its
 // value and the place it comes from, each one changed right there (webui/settings-model.js).
+import { handoffEl } from "./handoff.js";
 import { h, icon, ink } from "./dom.js";
 
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
@@ -36,6 +37,7 @@ export function panelEl(snap, handlers) {
       h("button.icon-button.sw-panel-back", { type: "button", "aria-label": "Back to the list", title: "Back to the list", onclick: handlers.onClose }, h("span.sw-narrow", icon("back")), h("span.sw-wide", icon("close"))),
       h("h3.sw-panel-title", p.tag ? h("span.sw-id", p.tag + " ") : null, p.title || "(no title)")),
     actionsEl(snap, handlers),
+    handoffEl(snap, handlers.onHandoff),
     h("div.sw-parts", p.parts.map((part) => h("section.sw-part",
       h(`h4.sw-part-head${part.color ? `.sw-c-${part.color}` : ""}`, part.head),
       h("dl.sw-facts", part.items.map((x) => item(x, handlers.onGo)))))));

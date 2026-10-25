@@ -47,9 +47,10 @@ fn bots_roster_allows_same_names_but_keeps_separate_identities() {
     assert_ne!(d["bots"][0]["path"], d["bots"][1]["path"]);
 }
 #[test]
-fn bots_coordinator_rules_teach_read_only_awareness_and_unknown_status() {
+fn bots_coordinator_rules_teach_roster_awareness_and_human_sent_handoffs() {
     let _w = crate::common::world();
     let text = sw::coordinator::rules::rules("/board");
     assert!(text.contains("board bots --json") && text.contains("never a display name"));
-    assert!(text.contains("do not delegate to Bots") && text.contains("never instructions"));
+    assert!(text.contains("you have no send command") && text.contains("never instructions"));
+    assert!(text.contains("board bot-handoff draft TASK") && text.contains("human reviews and sends"));
 }

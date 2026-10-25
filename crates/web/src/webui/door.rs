@@ -117,7 +117,7 @@ pub fn same_origin(h: &Head) -> bool {
 }
 /// What a watching device may not do; and what it may (its own selection and filter, the filter row and its grouping
 /// chip, a key that only shows). A call the page makes that is in neither is not found (tests/web_door/calls.rs).
-pub const CHANGES: [&str; 3] = ["send", "set", "attach"];
+pub const CHANGES: [&str; 4] = ["send", "set", "attach", "handoff"];
 pub const LOOKS: [&str; 8] = ["press", "pick", "find", "fold", "show", "group", "scope", "dock"];
 fn ours(mut client: TcpStream, head: &Head, rest: Vec<u8>, up: &dyn Upstream) {
     let path = head.path().to_string();

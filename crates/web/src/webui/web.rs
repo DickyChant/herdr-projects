@@ -166,6 +166,18 @@ pub fn call_with(client_id: &str, call: &str, args: Value, machine: &str, pcs: O
     match call {
         "board" => { let now = crate::clock::now(); let fx = update(&mut c.s, Event::Tick(now)); effects(c, fx, true); Ok(snapshot(c, args.s("have"))) }
         "press" => { let draft = super::view::press(c, args.s("id"), drive)?; if args.s("id") == "scope" { picked(c); } super::going::settle(c, seen, ui, true); let mut o = snapshot(c, ""); o.as_object_mut().unwrap().insert("draft".into(), json!(draft)); Ok(o) }
+        "handoff" => {
+            if !drive { return watch(); }
+            if !machine.is_empty() && machine != "local" { return Err("Chief handoffs are local to this board.".into()); }
+            let id = args.s("id");
+            let action = args.s("action");
+            let out = if action == "draft" { crate::bot_handoff::draft(id, args.s("scope"), args.s("end"), "user", &crate::bots::snapshot()) }
+                else if action == "send" { crate::bot_handoff::send_with(id, args.s("handoffId"), &crate::bot_handoff::transport::ask) }
+                else if action == "close" { crate::bot_handoff::close(id) }
+                else { return Err("Unknown handoff action.".into()); };
+            out.map_err(|e| e.msg)?;
+            Ok(snapshot(c, ""))
+        }
         "send" => {
             if !drive { return watch(); }
             let to = args.at("to").as_object().map(|t| (t.t("id"), t.b("reply"), t.get("scope").and_then(|x| x.as_str()).map(|x| x.chars().take(80).collect())));

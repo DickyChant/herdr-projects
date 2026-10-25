@@ -277,3 +277,10 @@ a.sw-tag:hover { text-decoration: underline; }
 .sw-float svg { width: var(--icon-size, 18px); height: var(--icon-size, 18px); }
 .sw-float-note { position: absolute; right: 0; bottom: calc(100% + var(--space-2, 8px)); width: max-content; max-width: min(280px, 80vw); padding: var(--space-2, 8px) var(--space-3, 12px); border-radius: var(--radius-md, 8px); background: var(--sw-lift); border: var(--hairline, 1px) solid var(--sw-line); color: var(--sw-text); font-weight: var(--fw-regular, 400); line-height: var(--lh-base, 1.5); white-space: normal; text-align: left; }
 @media (prefers-reduced-motion: no-preference) { .sw-row, .sw-float { transition: background-color var(--dur-fast, 120ms) var(--ease-out, ease-out); } }
+
+/* A Chief handoff is reviewed in the task panel before the user sends it. */
+.sw-handoff { display: grid; gap: 10px; overflow-wrap: anywhere; }
+.sw-handoff label { display: grid; gap: 4px; color: var(--sw-dim); }
+.sw-handoff input, .sw-handoff select { box-sizing: border-box; width: 100%; min-width: 0; padding: 8px; border: 1px solid var(--sw-line); border-radius: 6px; color: var(--sw-text); background: var(--sw-bg); font: inherit; }
+.sw-handoff button { justify-self: start; }
+.sw-handoff a { color: var(--sw-yellow); }

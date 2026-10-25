@@ -1,6 +1,7 @@
 //! The one program. With no arguments it opens the board in the current terminal; the plugin's pane entrypoint runs
 //! the same program as the plugin's pane in herdr. The subcommands let any agent drive the board from its shell. The
 //! entries herdr and the agents' hooks run are here; the commands on tasks are cli/tasks.rs.
+pub mod bot_handoff;
 pub mod flags;
 pub mod help;
 pub mod tasks;
@@ -64,6 +65,7 @@ fn run(cmd: &str, a: &Args) -> Res<i32> {
         println!("{}", if a.flags.b("json") { serde_json::to_string_pretty(&v).unwrap_or_default() } else { crate::bots::text(&v) });
         return Ok(0);
     }
+    if cmd == "bot-handoff" && !a.flags.b("help") { return bot_handoff::run(a); }
     crate::take_over::at_start(cmd); // older installs taken over: herdr-superwork's, the old herdr-projects 0.2's (take_over.rs)
     home_at_start(cmd); // an older version's folders move into the one home folder, once (store/move_home.rs)
     crate::store::old_copy::copy_at_start(cmd); // …then a copy of the data an older (Node) version wrote, once (store/old_copy.rs)

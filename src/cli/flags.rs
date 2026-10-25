@@ -67,6 +67,7 @@ fn takes(cmd: &str, sub: &str) -> Option<Takes> {
         "autopilot" => match sub { "on" => s(&["machine", "project", "goal"]), "off" => f(&["machine", "project", "all"]), "show" => f(&["machine", "project"]), _ => f(&[]) },
         "coordinator" => match sub { "tell" => f(&["delegate", "machine", "project"]), "new" | "fresh" => f(&["agent", "effort", "machine", "project"]), _ => f(&["machine", "project"]) },
         "sweep" => f(&["dry"]),
+        "bot-handoff" => f(&["scope", "end"]),
         "bots" | "machines" | "web-ui" | "remove-extras" | "reopen" | "version" | "install" | "update" | "doctor" => f(&[]),
         "voice" => f(&["from"]),
         "housekeep" => f(&["pr"]),

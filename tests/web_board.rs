@@ -151,3 +151,5 @@ fn every_colour_name_has_a_colour_on_the_page_every_state_a_mark_and_every_setti
     }
     assert!(left <= 3); assert_eq!(s.at("settings").at("canSet"), &json!(true));
 }
+
+mod bot_handoff;

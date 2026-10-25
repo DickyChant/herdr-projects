@@ -146,6 +146,7 @@ pub fn tick_once(socket: &str, watch: bool) -> Option<Vec<Obj>> {
         let every: Vec<Obj> = rs.iter().flat_map(|t| std::iter::once(t.clone()).chain(t.arr("tries").iter().filter_map(|x| x.as_object().cloned()))).collect();
         crate::watcher::watch_tick(&every, now());
     }
+    crate::bot_handoff::tick();
     rows
 }
 static SAID_AT: LazyLock<Mutex<HashMap<String, i64>>> = LazyLock::new(Default::default);

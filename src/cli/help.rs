@@ -53,6 +53,10 @@ pub const HELP: &str = r#"herdr-projects: a work board for herdr
                                       (a program setting, such as worker.agent, takes claude, codex, pi or another
                                        program herdr can start, as agy/gemini-3-pro; one that cannot do that role is
                                        refused with the reason)
+  herdr-projects bot-handoff draft TASK --scope TEXT [--end report_once|task_closed]
+                                             Boss drafts; the user sends from the board
+  herdr-projects bot-handoff show TASK | reports
+                                             read handoff status and Chief reports
   herdr-projects bots [--json]                read local DSH Bot identities/status through Ovis; sends nothing
   herdr-projects models [PROGRAM]              the model names each program takes, written as a setting writes them
                                       (codex/<model>); a name it does not take is refused when it is set
