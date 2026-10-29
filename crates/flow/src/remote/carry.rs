@@ -21,7 +21,7 @@ const SEND_MS: u64 = 60_000;
 pub fn send_bytes(m: &Machine, name: &str, kind: &str, bytes: &[u8], to: &For) -> Result<String, String> {
     let mut meta = json!({ "name": name, "kind": kind, "size": bytes.len() });
     match to { For::Task(id) => meta["id"] = json!(id), For::Coordinator(level) => meta["to"] = json!(level) }
-    let (cmd, args) = ssh_command(m, &format!("herdr-projects remote keep {}", b64(&meta)), false);
+    let (cmd, args) = ssh_command(m, &format!("herdr-projects remote keep {}", b64(&meta)), false).map_err(|why| unanswered(&m.label, &why))?;
     let mut c = std::process::Command::new(cmd);
     c.args(args);
     let end = run_fed(c, bytes.to_vec(), SEND_MS);

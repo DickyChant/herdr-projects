@@ -36,6 +36,7 @@ pub fn label(s: &State, k: K, r: Option<&Obj>) -> String {
             (None, Some(_)) => "this task's settings: see and change each one".into(),
             (None, None) => match super::edit::whose_here(s) { Ok(Whose::Repo(repo)) => format!("your settings for {}: what its tasks start from", crate::shown::words::repo_label(&repo)), Ok(_) => MINE.into(), Err(why) => why },
         },
+        K::Connect => super::connect::label(s),
         K::Undo => if s.draft_away.is_some() { "undo: bring back what you typed".into() } else if s.archive_undo.is_some() { "undo the archive".into() } else { "undo".into() },
         K::Find => "find: show only the tasks that match".into(),
         K::Free => if super::keys::on(s, K::Free, r) { "end the remote view that holds this pane at another size".into() } else { String::new() },

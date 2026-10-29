@@ -18,7 +18,7 @@ const svg = (name, cls) => { const s = icon(name); s.setAttribute("class", cls);
 
 // A board's dot, in the colour of the first of its tasks that asks for a look; none while it is asked or away.
 function dotEl(b) {
-  const word = b.off ? "not reachable" : !b.dot ? "being asked" : b.dot === "quiet" ? "all quiet" : b.line;
+  const word = b.paused ? "paused, not connecting" : b.off ? "not reachable" : !b.dot ? "being asked" : b.dot === "quiet" ? "all quiet" : b.line;
   return h(`span.sw-bdot${b.dot ? `.sw-c-${b.dot}` : ""}${b.off ? ".is-off" : ""}`, { role: "img", "aria-label": `${b.name}: ${word}` });
 }
 function rowEl(b, onPick) {

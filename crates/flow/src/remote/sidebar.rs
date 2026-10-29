@@ -34,7 +34,7 @@ pub fn looked_up(list: &mut Value) {
 /// its herdr itself over the same SSH: herdr's order and the machine its window shows, an SSH alias there unresolved.
 /// None when its herdr gives no list (none found, or older than its machines).
 pub fn asked(m: &Machine) -> Option<Value> {
-    let (cmd, args) = super::ssh_command(m, r#"printf "\n"; herdr machine list --json | tr -d "\n"; printf "\n""#, false);
+    let (cmd, args) = super::ssh_command(m, r#"printf "\n"; herdr machine list --json | tr -d "\n"; printf "\n""#, false).ok()?;
     let mut c = std::process::Command::new(cmd);
     c.args(args);
     let end = super::run_ended(c, 10000);

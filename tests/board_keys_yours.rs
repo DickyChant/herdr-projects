@@ -54,11 +54,11 @@ fn a_chord_that_clashes_is_refused_naming_the_key_it_clashes_with() {
     let e = set("chatMessage=ctrl+l").unwrap_err();
     assert!(e.contains("chatMessage=ctrl+l: ctrl+l is yes's key already. Move yes too, or choose another") && e.ends_with("Nothing was changed."), "{e}");
     assert_eq!(key_name("chatMessage"), "alt+c");
-    assert!(set("stop=ctrl+q, archive=ctrl+q").unwrap_err().contains("archive=ctrl+q is the same chord"));
+    assert!(set("stop=ctrl+g, archive=ctrl+g").unwrap_err().contains("archive=ctrl+g is the same chord"));
     // Moving the other one too frees its chord, in either order.
-    set("undo=ctrl+c, close=ctrl+q").unwrap();
-    assert_eq!((key_name("undo"), key_name("close")), ("ctrl+c".to_string(), "ctrl+q".to_string()));
-    assert!(is(&Press::chord("ctrl+c"), K::Undo) && is(&Press::chord("ctrl+q"), K::Close) && !is(&Press::chord("ctrl+z"), K::Undo));
+    set("undo=ctrl+c, close=ctrl+g").unwrap();
+    assert_eq!((key_name("undo"), key_name("close")), ("ctrl+c".to_string(), "ctrl+g".to_string()));
+    assert!(is(&Press::chord("ctrl+c"), K::Undo) && is(&Press::chord("ctrl+g"), K::Close) && !is(&Press::chord("ctrl+z"), K::Undo));
     let e = set("chatMesage=ctrl+o").unwrap_err(); assert!(e.contains("no key is called chatMesage. Did you mean chatMessage?"), "{e}");
     let e = set("stop=x").unwrap_err(); assert!(e.contains("a plain x is typed into the text box"), "{e}");
     let e = set("newline=ctrl+j").unwrap_err(); assert!(e.contains("newline is the text box's own key"), "{e}");

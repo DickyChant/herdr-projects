@@ -81,6 +81,10 @@ pub const HELP: &str = r#"herdr-projects: a work board for herdr
   herdr-projects --skill                       instructions an agent can load
   herdr-projects machines                      other machines: whether each answers, its version and free disk, or why not
                                                 and what to do; and whether another machine could ask this one
+  herdr-projects machines stop [MACHINE…]      stop connecting: no herdr-projects process here opens SSH to those
+                                                machines (none named: to every other machine) until resumed; a paused
+                                                one shows "paused" (the board.paused setting, docs/other-machines.md)
+  herdr-projects machines resume [MACHINE…]    connect again (none named: to every machine)
   herdr-projects sweep [--dry]                 remove what ended tasks left behind now: their temporary files, agents'
                                                 files for worktrees that are gone, old build output (docs/disk-space.md);
                                                 --dry: only say what would go

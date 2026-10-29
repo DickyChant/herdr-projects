@@ -63,6 +63,12 @@ pub fn unread_lines(s: &State, width: usize) -> Vec<Inked> {
     let whole = s.scope != "*";
     let mut out = vec![];
     for m in all.into_iter().filter(|m| !m.ok) {
+        // Connecting to it stopped (remote/paused.rs): said in red, with the way back, and nothing more.
+        if m.why.as_ref().is_some_and(|w| w.s("kind") == "paused") {
+            let line = format!("{}: paused, not connecting (no SSH). {} or herdr-projects machines resume {} connects again.", m.machine.label, key_name("stopConnecting"), m.machine.label);
+            out.extend(Inked::of(line, Ink::Red).wrap(width.saturating_sub(2).max(10)).into_iter().map(|l| Inked::plain(" ").add(l)));
+            continue;
+        }
         let (line, detail): (String, Vec<String>) = match &m.why {
             Some(w) => { let mut d = vec![]; if w.b("said") { d.push("What came back:".to_string()); d.extend(w.s("said").lines().map(|l| format!("  {l}"))); d.push(String::new()); } d.extend(w.arr("detail").iter().map(text)); (format!("{}: its tasks cannot be read: {}.", m.machine.label, w.s("line")), d) }
             None => (format!("{}: asking for its tasks…", m.machine.label), vec![]),
@@ -101,6 +107,8 @@ pub fn heading_words(s: &State, t: &Theme, rows: &[Row], at: usize) -> (Inked, O
     // Its coordinator on autopilot: a tag after its name, dimmed as a task's `[research]` (view/pilot.rs).
     let shown = super::pilot::shown(s, t, id);
     if shown.as_ref().is_some_and(|x| x.on) { named = named.add(Inked::of(format!(" {}", super::pilot::PILOT_TAG), Ink::Muted)); }
+    // Another machine connecting to is stopped for: `paused`, in red, after its name.
+    if *machine && id.strip_prefix(&crate::board::update::heads::machine_id("")).is_some_and(|h| crate::board::update::connect::shown_paused(s, h)) { named = named.add(Inked::of(" paused", Ink::Red).bold()); }
     // What a folded row holds: its tasks and automations; under Coordinators its projects' coordinators. A machine's
     // row and the top row also say how many of the coordinators they stand over are on autopilot.
     let holds = if crate::board::update::shows::coords(s) { format!("{folded} project coordinator{}", if *folded == 1 { "" } else { "s" }) } else { crate::board::update::heads::holds(*folded, *folded_autos) };

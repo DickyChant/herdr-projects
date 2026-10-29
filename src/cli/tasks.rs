@@ -167,7 +167,7 @@ pub fn command(cmd: &str, a: &Args) -> Res<(Value, String)> {
         "coordinator" => coordinator(a, &here, me.as_ref())?,
         "autopilot" => crate::autopilot::command::autopilot_command(&pos[1..], flags)?,
         "sweep" => { let r = crate::leftovers::sweep::sweep_with(flags.b("dry")); let s = crate::leftovers::sweep::say(&r); (r, s) }
-        "machines" => { let r = crate::remote::check::check(20000); let s = crate::remote::check::say(&r); (r, s) }
+        "machines" => crate::remote::paused::command(&pos[1..])?,
         "voice" => crate::calls::command::main(&pos[1..]),
         "web-ui" => { let r = crate::webui::command::main(&pos[1..]); if !r.b("ok") { crate::fail!("{}", r.s("msg")); } let m = r.t("msg"); (r, m) }
         "remove-extras" => {

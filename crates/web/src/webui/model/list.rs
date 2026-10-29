@@ -47,7 +47,7 @@ pub fn unread(s: &State) -> Vec<Value> {
         Some(w) => {
             let mut d: Vec<String> = w.arr("detail").iter().map(text).collect();
             if w.b("said") { d.push(String::new()); d.push("What came back:".into()); d.extend(w.s("said").split('\n').map(|l| format!("  {l}"))); }
-            json!({ "machine": m.machine.label, "line": format!("{}: {}.", m.machine.label, if w.b("line") { w.t("line") } else { "it did not answer".into() }), "detail": d, "asking": false })
+            json!({ "machine": m.machine.label, "line": format!("{}: {}.", m.machine.label, if w.b("line") { w.t("line") } else { "it did not answer".into() }), "detail": d, "asking": false, "paused": w.s("kind") == "paused" })
         }
         None => json!({ "machine": m.machine.label, "line": format!("Asking {} for its tasks…", m.machine.label), "detail": [], "asking": true }),
     }).collect()

@@ -175,6 +175,7 @@
 .sw-unread-x { flex: none; min-width: var(--touch-target, 40px); min-height: var(--touch-target, 40px); color: var(--sw-dim); }
 .sw-unread-one { margin: var(--space-2, 8px) var(--space-2, 8px) 0 0; }
 .sw-unread-line { margin: 0; color: var(--sw-text); overflow-wrap: anywhere; }
+.sw-unread-line.is-paused { color: var(--sw-red); font-weight: var(--fw-semibold, 600); }
 .sw-asking { margin: var(--space-2, 8px) var(--space-3, 12px) 0; color: var(--sw-dim); font-size: var(--fs-sm, 13px); }
 .sw-unread summary { display: flex; align-items: center; min-height: var(--touch-target, 40px); color: var(--accent, #f0a830); cursor: pointer; }
 .sw-unread-detail { margin: var(--space-2, 8px) 0 0; color: var(--sw-dim); font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }

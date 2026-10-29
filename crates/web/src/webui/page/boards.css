@@ -16,6 +16,8 @@
 .sw-bdot[class*="sw-c-"]::after { content: ""; width: var(--space-2, 8px); height: var(--space-2, 8px); border-radius: var(--radius-pill, 999px); background: currentColor; }
 /* A board that cannot be reached: a ring, as the web UI draws a state that waits. */
 .sw-bdot.is-off { color: var(--sw-dim); }
+/* A machine connecting to is stopped for (paused): its ring in red. */
+.sw-bdot.is-off.sw-c-red { color: var(--sw-red); }
 .sw-bdot.is-off::after { content: ""; width: var(--space-2, 8px); height: var(--space-2, 8px); border-radius: var(--radius-pill, 999px); box-sizing: border-box; border: calc(var(--hairline, 1px) * 2) solid currentColor; }
 /* Work going on breathes as the web UI's working dot does (its own steps, where it has them). */
 @media (prefers-reduced-motion: no-preference) { .sw-bdot.sw-c-yellow::after { animation: sidebar-breathe var(--dur-breathe, 2.4s) steps(6) infinite; } }

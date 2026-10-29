@@ -44,9 +44,12 @@ fn handle(v: &Value, machine: &str, pipe: &Arc<Pipe>, hangup: &mut Arc<AtomicBoo
 fn listen_to(m: Machine) {
     let mut wait = 5;
     loop {
-        let (cmd, args) = ssh_command(&m, &format!("herdr-projects voice listen --from {}", crate::remote::clean(&this_computer(), "_.-")), false);
+        // Connecting to it stopped (remote/paused.rs): no SSH, and asked again after the pause.
+        let Ok((cmd, args)) = ssh_command(&m, &format!("herdr-projects voice listen --from {}", crate::remote::clean(&this_computer(), "_.-")), false) else { std::thread::sleep(std::time::Duration::from_secs(10)); continue };
         let started = std::time::Instant::now();
         if let Ok(mut ch) = Command::new(cmd).args(args).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null()).spawn() {
+            let ended = Arc::new(AtomicBool::new(false));
+            cut_when_paused(&m, ch.id(), ended.clone());
             let input = Arc::new(Mutex::new(ch.stdin.take()));
             let w = input.clone();
             let pipe = Pipe::new(Box::new(move |line| w.lock().unwrap().as_mut().map(|i| writeln!(i, "{line}").and_then(|_| i.flush()).is_ok()).unwrap_or(false)));
@@ -56,12 +59,22 @@ fn listen_to(m: Machine) {
                 handle(&serde_json::from_str(&line).unwrap_or(Value::Null), &m.label, &pipe, &mut hangup, &send);
             }
             hangup.store(true, Ordering::SeqCst);
+            ended.store(true, Ordering::SeqCst);
             let _ = ch.kill(); let _ = ch.wait();
         }
         // A connection that held for a while was fine: try again soon. One that keeps failing: less and less often.
         wait = if started.elapsed().as_secs() > 60 { 5 } else { (wait * 2).min(120) };
         std::thread::sleep(std::time::Duration::from_secs(wait));
     }
+}
+/// A connection held open to a machine is ended as soon as connecting to it is stopped.
+fn cut_when_paused(m: &Machine, pid: u32, ended: Arc<AtomicBool>) {
+    let m = m.clone();
+    std::thread::spawn(move || loop {
+        std::thread::sleep(std::time::Duration::from_secs(3));
+        if ended.load(Ordering::SeqCst) { return; }
+        if crate::remote::paused::is_paused(&m) { unsafe { libc::kill(pid as i32, libc::SIGTERM); } return; }
+    });
 }
 /// This computer's own board: listened to in this process, as `voice listen` listens for another computer.
 fn listen_here(door: Door) {

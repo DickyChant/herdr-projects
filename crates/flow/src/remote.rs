@@ -14,6 +14,7 @@ pub mod carry;
 pub mod check;
 pub mod lookup;
 pub mod own_names;
+pub mod paused;
 pub mod projects;
 pub mod sidebar;
 pub mod why;
@@ -49,17 +50,19 @@ pub fn machines() -> Vec<Machine> {
 /// Its own known-hosts file, so an old saved key elsewhere cannot get in the way; one shared connection per machine,
 /// so asking again every few seconds costs almost nothing. The remote side runs through a login shell so PATH is set.
 /// `remote` holds no single quote (what it carries is cleaned or base64), so it reads alike in single quotes everywhere.
-pub fn ssh_command(m: &Machine, remote: &str, tty: bool) -> (String, Vec<String>) {
+/// Every SSH connection to another machine is made from this: Err (why) while connecting to it is stopped (paused.rs).
+pub fn ssh_command(m: &Machine, remote: &str, tty: bool) -> Result<(String, Vec<String>), Value> {
+    paused::gate(m)?;
     debug_assert!(!remote.contains('\''), "{remote}");
     let session = if !m.session.is_empty() && m.session != "default" { clean(&m.session, "_.-") } else { String::new() };
-    if let Ok(s) = std::env::var("HERDR_PROJECTS_SSH") { return (s, vec![m.target.clone(), format!("{}{remote}", if session.is_empty() { String::new() } else { format!("HERDR_SESSION={session} ") })]); } // a stand-in, for tests
+    if let Ok(s) = std::env::var("HERDR_PROJECTS_SSH") { return Ok((s, vec![m.target.clone(), format!("{}{remote}", if session.is_empty() { String::new() } else { format!("HERDR_SESSION={session} ") })])); } // a stand-in, for tests
     let d = data_dir();
     let mut a: Vec<String> = if tty { vec!["-t".into()] } else { vec!["-o".into(), "BatchMode=yes".into()] };
     for o in ["ConnectTimeout=6", "StrictHostKeyChecking=accept-new"] { a.extend(["-o".into(), o.into()]); }
     a.extend(["-o".into(), format!("UserKnownHostsFile={}", d.join("known_hosts").display()), "-o".into(), "ControlMaster=auto".into(), "-o".into(), format!("ControlPath={}", d.join("ssh-%C").display()), "-o".into(), "ControlPersist=120".into(), "-o".into(), "LogLevel=ERROR".into()]);
     a.push(m.target.clone());
     a.push(login_line(&session, remote));
-    ("ssh".into(), a)
+    Ok(("ssh".into(), a))
 }
 /// What sshd hands the machine's own login shell, whichever it is (bash, zsh, fish, …): only `exec`, a path and two
 /// words in single quotes, which every shell reads alike. The rest is /bin/sh's (fish cannot read `${`): it starts the
@@ -81,7 +84,7 @@ pub fn run_ended(mut c: std::process::Command, ms: u64) -> Ended {
 /// Ask a machine: its answer (one line of JSON, wherever the shell's start-up files printed around it), or why there
 /// is none (remote/why.rs).
 pub fn ask(m: &Machine, what: &str, arg: Option<&Value>, ms: u64) -> Result<Value, Value> {
-    let (cmd, args) = ssh_command(m, &format!("herdr-projects remote {what}{}", arg.map(|a| format!(" {}", b64(a))).unwrap_or_default()), false);
+    let (cmd, args) = ssh_command(m, &format!("herdr-projects remote {what}{}", arg.map(|a| format!(" {}", b64(a))).unwrap_or_default()), false)?;
     let mut c = std::process::Command::new(cmd);
     c.args(args);
     let end = run_ended(c, ms);
@@ -103,7 +106,7 @@ pub fn ask_list(m: &Machine, ms: u64) -> Result<Value, Value> {
 }
 /// Entering a remote task's agent: SSH to that machine and `herdr agent attach <pane id>` there, in the board's own
 /// terminal. A direct view of that one agent's terminal, no nested herdr; detaching (ctrl+b q) returns to the board.
-pub fn attach_command(m: &Machine, pane: &str) -> (String, Vec<String>) {
+pub fn attach_command(m: &Machine, pane: &str) -> Result<(String, Vec<String>), Value> {
     let session = if !m.session.is_empty() && m.session != "default" { format!(" --session {}", clean(&m.session, "_.-")) } else { String::new() };
     ssh_command(m, &format!("herdr{session} agent attach {}", clean(pane, ":_-")), true)
 }

@@ -100,6 +100,31 @@ vm-a: its tasks cannot be read: herdr-projects is not found there.
 | it answered something else than the board's answer, it answered nothing, it answered with an error, it answered, but not with its tasks | the command ran but did not print the board's list: an older plugin, a start-up file that prints and stops, an error | update herdr-projects there; run the test above to see all of it |
 | it took too long | no answer within 20 seconds | the board asks again by itself; look for a start-up file that waits for something |
 
+## Stop connecting
+
+The board here asks every other machine for its tasks about once a minute, over SSH, and the call helper keeps one SSH
+connection open to each. When that must stop (a jump host that wants a second factor, or that throttles you), stop
+connecting: nothing of the board on this machine opens SSH to those machines any more, until you resume.
+
+```sh
+herdr-projects machines stop            # every other machine
+herdr-projects machines stop vm-a vm-b  # only these (their board names, user@host, or herdr's ids)
+herdr-projects machines resume vm-a     # vm-a again; the rest stay stopped
+herdr-projects machines resume          # every machine again
+```
+
+It is one setting, `board.paused` (`all`, machine names, or `none`), in your settings file
+(`~/.herdr-projects/settings/config.json`): `herdr-projects set board.paused all` does the same as `machines stop`.
+Every process of the board (the board itself, the keeper and its jobs, the call helper, the web board, `herdr-projects
+machines`, an action on a task there, a file sent with words, going into an agent there) reads it again before each
+connection, so what already runs follows a change at once, with no restart; a connection the call helper holds open is
+closed, as is the connection ssh shares (`ControlMaster`). This machine is never touched.
+
+On the board the stop-connecting key ([keys](keys.md)) stops every other machine, and again connects to all; on a
+machine's heading, or with only that machine's board shown, it is that machine's alone. A paused machine shows
+`paused` in red where its tasks would be, and `herdr-projects machines` says `paused` for it without asking it. The web
+board says the same, its Boards list marks it with a red ring, and the switch is in its More menu.
+
 ## What you see of another machine
 
 - **Headings.** With every machine shown, each machine is a heading of its own, with its repos (or status groups) under

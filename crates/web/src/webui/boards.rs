@@ -43,6 +43,7 @@ fn far(c: &Client, label: &str, m: &Remote, pcs: &[Pc]) -> (Value, Option<[usize
     let name = pc_of(&m.machine, pcs).map(|p| p.name).unwrap_or_else(|| label.to_string());
     if m.ok { let n = with_coords(count(&m.items), c, label); return (entry(label, &name, &n, format!("{name}'s board: {}", line(&n))), Some(n)); }
     let Some(why) = &m.why else { return (json!({ "scope": label, "name": name, "dot": "", "line": "asking…", "title": format!("Asking {name} for its board") }), None) };
+    if why.s("kind") == "paused" { return (json!({ "scope": label, "name": name, "dot": "red", "line": "paused: not connecting", "off": true, "paused": true, "title": format!("Connecting to {name} is stopped: no SSH to it. Stop connecting (More) or herdr-projects machines resume {label} connects again.") }), None); }
     let detail: Vec<String> = std::iter::once(why.t("line")).chain(why.arr("detail").iter().map(|d| d.as_str().unwrap_or("").to_string())).filter(|d| !d.is_empty()).collect();
     (json!({ "scope": label, "name": name, "dot": "", "line": "not reachable", "off": true, "title": format!("{name} is not reachable: {}", detail.join("\n")) }), None)
 }

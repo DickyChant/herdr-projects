@@ -6,6 +6,9 @@ use serde_json::json;
 use sw::json::*;
 use sw::remote::why::{known_host, not_list, unanswered, why_not, Ended};
 
+/// Stopped connecting: `machines stop|resume`, the board's key, and nothing that connects gets past it.
+mod paused;
+
 fn end(code: i32, stdout: &str, stderr: &str) -> Ended { Ended { code: Some(code), stdout: stdout.into(), stderr: stderr.into(), timed_out: false, error: String::new(), ms: 0 } }
 
 #[test]
@@ -68,10 +71,10 @@ fn real_programs_the_door_answers_one_line_of_json_and_actions_run_where_the_tas
     assert_eq!(disp.at("ok"), &json!(true)); assert!(disp.s("msg").contains("added"), "{disp}");
     let found = sw::remote::machines();
     assert_eq!(found.iter().map(|m| (m.target.clone(), m.label.clone())).collect::<Vec<_>>(), vec![("exedev@vm-a".to_string(), "vm-a".to_string()), (format!("{}@vm-b", sw::store::files::me()), "vm-b".to_string())]);
-    let (cmd, args) = sw::remote::ssh_command(&sw::remote::Machine { target: "exedev@vm-a".into(), session: "work".into(), ..Default::default() }, "herdr-projects remote list", false);
+    let (cmd, args) = sw::remote::ssh_command(&sw::remote::Machine { target: "exedev@vm-a".into(), session: "work".into(), ..Default::default() }, "herdr-projects remote list", false).unwrap();
     assert_eq!(cmd, "ssh"); assert!(args.iter().any(|a| a == "BatchMode=yes"));
     assert_eq!(args.last().unwrap(), r#"exec /bin/sh -c 'export HERDR_SESSION=work; exec "${SHELL:-/bin/sh}" -lc "$0"' 'herdr-projects remote list'"#);
-    let (_, at) = sw::remote::attach_command(&sw::remote::Machine { target: "exedev@vm-a".into(), ..Default::default() }, "w4:p1; rm -rf /");
+    let (_, at) = sw::remote::attach_command(&sw::remote::Machine { target: "exedev@vm-a".into(), ..Default::default() }, "w4:p1; rm -rf /").unwrap();
     assert!(at.iter().any(|a| a == "-t")); assert_eq!(at.last().unwrap(), r#"exec /bin/sh -c 'exec "${SHELL:-/bin/sh}" -lc "$0"' 'herdr agent attach w4:p1rm-rf'"#);
 }
 

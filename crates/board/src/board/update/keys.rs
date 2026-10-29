@@ -156,6 +156,7 @@ pub fn run_as(s: &mut State, k: K, p: &Press, r: Option<&Obj>, fx: &mut Vec<Effe
         K::ByRepo => { (s.by_repo, s.by_machine) = (!s.by_repo && !s.by_machine, s.by_repo); fx.push(Effect::Save); relist(s); }
         K::AllDone => { s.all_done = !s.all_done; relist(s); }
         K::Scope => super::remotes::next_scope(s, fx),
+        K::Connect => super::connect::key(s, fx),
         // Decided by the state, above: nothing of their own here.
         // Its line in the ? menu: as the key itself does with nothing typed (the key goes through the state, above).
         K::Delegate => match r { Some(r) => act::tab(s, "", Some(r), fx), None => if let Some(t) = super::pilot::keyed(s) { super::pilot::run(s, &t, true, fx) } },

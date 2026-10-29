@@ -90,9 +90,9 @@ function unreadEl(list) {
   const off = gone(), show = bad.length && !bad.every((u) => off.includes(said1(u)));
   const names = bad.map((u) => u.machine), who = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
   const box = show ? h("div.sw-unread", { role: "status" },
-    h("div.sw-unread-top", h("p.sw-unread-head", `${who} ${names.length === 1 ? "does" : "do"} not answer, so ${names.length === 1 ? "its" : "their"} tasks are not shown. The board keeps asking by itself.`),
+    h("div.sw-unread-top", h("p.sw-unread-head", bad.every((u) => u.paused) ? `Connecting to ${who} is stopped (paused): no SSH, so ${names.length === 1 ? "its" : "their"} tasks are not shown. Stop connecting, in More, connects again.` : `${who} ${names.length === 1 ? "does" : "do"} not answer, so ${names.length === 1 ? "its" : "their"} tasks are not shown. The board keeps asking by itself.`),
       h("button.icon-button.sw-unread-x", { type: "button", "aria-label": "Dismiss", title: "Dismiss", onclick: () => { try { localStorage.setItem(GONE, JSON.stringify(bad.map(said1))); } catch {} box.remove(); } }, icon("close"))),
-    bad.map((u) => h("div.sw-unread-one", h("p.sw-unread-line", u.line),
+    bad.map((u) => h("div.sw-unread-one", h(`p.sw-unread-line${u.paused ? ".is-paused" : ""}`, u.line),
       u.detail.length ? h("details", h("summary", "What to do"), h("pre.sw-unread-detail", u.detail.join("\n"))) : null))) : null;
   return [box, ...asking.map((u) => h("p.sw-asking", { role: "status" }, u.line))].filter(Boolean);
 }

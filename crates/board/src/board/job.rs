@@ -55,6 +55,8 @@ pub enum Job {
     /// The herdr web UI's link through the board's front door, or left alone for good.
     WebUiLink, WebUiDecline,
     /// A voice call for whoever the chat talks to (calls/ring.rs), hanging it up, and who it talks to now.
+    /// Stop connecting to another machine (`machine`), or to every other one, or connect again (remote/paused.rs).
+    Connect { machine: Option<crate::remote::Machine> },
     CallRing { owner: String, target: crate::voice::call::Target, session: String }, CallEnd, CallTarget { target: crate::voice::call::Target },
     Nothing,
 }
@@ -118,6 +120,8 @@ pub enum Then {
     Copy(String),
     /// A call rang: its id, for the chat to say when no helper took it, or why it ended before it began.
     CallRang { id: String },
+    /// Which machines connecting to is stopped for now (`board.paused`): the board shows them so.
+    Paused(Vec<String>),
 }
 /// `about`: the row the job acted on (Job::about), `kind` which job it was (Job::kind); `seen`: how many reads of the tasks had started when it ended, so the
 /// board knows which read shows what it did (update/pending.rs).
@@ -212,6 +216,7 @@ fn run_one(job: Job) -> Done {
             Job::AutoRemove { id, name } => { crate::automations::list::remove(&id)?; Done::say(format!("Removed the automation \"{name}\"."), Ink::Muted).and(Then::AutoGone) }
             Job::Set { id, name, value, whose } => super::job_far::set(&id, &name, value, &whose)?,
             Job::CoordSeen { unseen, to } => { crate::coordinator::requests::seen(&unseen, crate::coordinator::co::Co::of(&crate::herdr::cli::current_socket(), &to)); Done::default() }
+            Job::Connect { machine } => { let w = crate::remote::paused::toggle(machine.as_ref())?; let now = crate::remote::paused::said(); Done::say(w, if now.is_empty() { Ink::Yellow } else { Ink::Red }).and(Then::Paused(now)) }
             Job::ChatLeft { id } => { crate::finish::chat::left(&id); Done::default() }
             Job::OpenAgent { id, popup } => super::job_far::open_agent(&id, popup),
             Job::OpenLink { link, what } => match crate::opener::open(&link) {

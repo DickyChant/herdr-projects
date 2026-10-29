@@ -93,6 +93,7 @@ pub mod autos;
 pub mod beat;
 pub mod call;
 pub mod chat;
+pub mod connect;
 pub mod coords;
 pub mod top;
 pub mod depth;

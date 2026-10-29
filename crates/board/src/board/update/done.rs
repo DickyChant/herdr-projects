@@ -44,6 +44,7 @@ pub fn apply(s: &mut State, d: Done, fx: &mut Vec<Effect>) {
             }
             Then::Attach { command, args, .. } => fx.push(Effect::Attach { command, args }),
             Then::Copy(text) => fx.push(super::link::copy(&text)),
+            Then::Paused(list) => super::connect::taken(s, &list, fx),
             Then::CallRang { id } => s.call_link = Some((id, s.now)),
             Then::Paste(text) => { s.paste_text = [s.paste_text.clone(), text].into_iter().filter(|x| !x.is_empty()).collect::<Vec<_>>().join("\n\n"); }
             Then::Saved(name) => if s.editing.as_ref().map(|e| e.typing == name).unwrap_or(false) { if let Some(e) = s.editing.as_mut() { e.typing.clear(); } s.input.set_text(""); },

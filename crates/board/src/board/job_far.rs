@@ -52,7 +52,7 @@ pub fn far(m: &Machine, host: &str, action: &str, req: Value, quiet: bool) -> Do
             if j.b("focused") { return Done::default().and(Then::OpenedThere { id: format!("{host}:{}", req.t("id")), host: host.into(), agent: j.b("hasAgent") }); }
             if !j.b("hasAgent") { return Done::say(format!("{host}: its agent has exited and could not be restarted. {} and a reply starts it again.", key_name("talk")), Ink::Yellow); }
             // Outside a herdr client, or a machine on an older plugin that cannot put it in front: this terminal attaches.
-            let (command, args) = attach_command(m, &if j.b("pane") { j.t("pane") } else { req.t("pane") });
+            let (command, args) = match attach_command(m, &if j.b("pane") { j.t("pane") } else { req.t("pane") }) { Ok(c) => c, Err(why) => return Done::fail(unanswered(host, &why)) };
             Done::default().and(Then::Attach { command, args, id: format!("{host}:{}", req.t("id")) })
         }
         Ok(j) => {

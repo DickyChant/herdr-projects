@@ -44,19 +44,22 @@ pub fn check(ms: u64) -> Value {
     let others: Vec<_> = list.into_iter().map(|m| std::thread::spawn(move || asked(&m, ms))).collect();
     let mut here = me.join().unwrap_or(Value::Null);
     if let Some(h) = here.as_object_mut() { h.put("free", crate::leftovers::room::free_here()); }
-    json!({ "here": here, "machines": others.into_iter().filter_map(|h| h.join().ok()).collect::<Vec<_>>(), "off": setting("board.machines", None) == json!("none") })
+    json!({ "here": here, "machines": others.into_iter().filter_map(|h| h.join().ok()).collect::<Vec<_>>(), "off": setting("board.machines", None) == json!("none"), "paused": super::paused::said() })
 }
+/// A machine connecting to is stopped for (paused.rs): it was not asked.
+fn paused(x: &Value) -> bool { x.at("why").s("kind") == "paused" }
 pub fn say(r: &Value) -> String {
     let rows: Vec<&Value> = std::iter::once(r.at("here")).chain(r.arr("machines").iter()).collect();
     let wide = rows.iter().map(|x| x.s("label").chars().count()).max().unwrap_or(0);
     let one = |x: &Value| {
         let head = if x.b("here") {
             if x.b("ok") { format!("this machine: a login shell ({}) finds herdr-projects {}", x.s("shell"), if x.b("version") { x.t("version") } else { "(an older one than this)".into() }) } else { format!("this machine: other machines cannot ask it: {}", x.at("why").s("line")) }
+        } else if paused(x) { format!("paused: not connecting (herdr-projects machines resume {})", x.s("label"))
         } else if x.b("ok") { format!("answers · herdr-projects {} · {} task{}", if x.b("version") { x.t("version") } else { "(an older one: update it there)".into() }, x.i("tasks"), if x.i("tasks") == 1 { "" } else { "s" }) } else { format!("does not answer: {}", x.at("why").s("line")) };
         // Free disk: the least among the disks its board writes to (an older version does not say).
         let free = x.at("free").as_u64().map(|f| format!(" · {} free", crate::disk::gb(f))).unwrap_or_default();
         let mut out = vec![format!("{:<wide$}  {head}{free}{}", x.s("label"), if x.b("here") { String::new() } else { format!("  ({})", x.s("target")) })];
-        if !x.b("ok") {
+        if !x.b("ok") && !paused(x) {
             let mut d: Vec<String> = x.at("why").arr("detail").iter().map(text).collect();
             if x.at("why").b("said") { d.push("What came back:".into()); d.extend(x.at("why").s("said").lines().map(|l| format!("  {l}"))); }
             out.extend(d.into_iter().map(|l| format!("    {l}")));
@@ -65,5 +68,6 @@ pub fn say(r: &Value) -> String {
     };
     let mut all: Vec<String> = rows.iter().map(|x| one(x)).collect();
     if r.arr("machines").is_empty() { all.push(if r.b("off") { "Other machines are off (unset board.machines turns them on).".into() } else { "No other machines. Add one with: herdr machine add <name> <ssh target>  (or name them in the board.machines setting).".into() }); }
+    if super::paused::all_paused() { all.push("Connecting to other machines is stopped: none was asked. To connect again: herdr-projects machines resume".into()); }
     all.join("\n")
 }
